@@ -141,3 +141,47 @@ footer {border-color:#1b5270}
   .stars {background-image:radial-gradient(ellipse at top,#083354,#020710 73%)}
   .hero::after {display:none}
 }
+
+
+/* Animated background provided by the project owner.
+   The black in the GIF is blended into the dark universe behind the controls. */
+:root{--purple:#64a6f2;--teal:#2eecff;--yellow:#dcfaff;--pink:#76c2ff}
+.stars{background-image:
+  radial-gradient(1px 1px at 15% 26%,#b9f5ffab 99%,transparent),
+  radial-gradient(2px 2px at 76% 18%,#75dfff83 99%,transparent),
+  radial-gradient(1px 1px at 45% 85%,#ffffffac 99%,transparent),
+  radial-gradient(1px 1px at 91% 67%,#4cdcff93 99%,transparent),
+  linear-gradient(155deg,#030910,#08192c 40%,#050c1b 78%,#02070d);
+ background-size:310px 400px,490px 320px,420px 370px,370px 430px,cover}
+.hero:after{
+ content:"";
+ position:absolute;
+ inset:0 0 0 auto;
+ width:min(54%,650px);
+ height:100%;
+ background:url("./assets/deltarune-background.gif") center 45% / contain no-repeat;
+ mix-blend-mode:screen;
+ opacity:.88;
+ pointer-events:none;
+ z-index:1;
+ filter:drop-shadow(0 0 20px #16baf44d)
+}
+.hero:before{background:radial-gradient(ellipse,#08bbed35,transparent 72%)}
+.hero-copy{position:relative;z-index:3}
+.hero-symbols{opacity:.25;z-index:2}
+.hero h1 em{color:#c0fbff}
+.brand-symbol{color:#2eecff}
+.panel{background:linear-gradient(155deg,#131d30f2,#101423f2);border-color:#34506a}
+.topbar{border-color:#33506b}
+.nav{background:#101b2cdd;border-color:#35506d}
+.nav-btn.active{background:#176081}
+.status-dot{background:#37f7eb;box-shadow:0 0 9px #37f7eb}
+.project-name input{border-bottom-color:#39748b}
+.track-item.selected{background:#15364d;border-color:#309abb}
+.play-btn{background:#3eeaff;box-shadow:0 3px #217e91}
+.piano-sidebar{background:#101e2f}
+.piano-shell{background:#081425}
+.caption-chip,.sidebar-tip,.info-card{border-color:#316f8c}
+@media(max-width:900px){.hero:after{width:57%;opacity:.7}}
+@media(max-width:600px){.hero:after{right:-78px;width:330px;opacity:.36;background-position:center right}.hero-symbols{opacity:.12}}
+@media(prefers-reduced-motion:reduce){.hero:after{background-image:none}}
