@@ -50,3 +50,10 @@ A arte de fundo definitiva poderá ser incorporada quando for fornecida. A atual
 Todas as músicas e os arquivos importados são processados no **próprio navegador**; o site não envia áudio a servidores. Os salvamentos locais podem desaparecer caso o navegador limpe os dados do site: **exporte o JSON** para fazer backup. WAVs exportados pelo sequenciador duram 4 compassos. O processamento retrô de áudio limita o resultado aos primeiros 180 segundos do arquivo. O site funciona melhor nas versões recentes do Chrome, Edge e Firefox.
 
 Nenhum áudio ou arte oficial de DELTARUNE é distribuído neste repositório.
+
+
+## 🖼️ GIF animado do projeto
+
+O arquivo \`assets/deltarune-background.gif\` foi enviado pelo proprietário do projeto e está hospedado **no próprio repositório**, sem depender de links externos. A animação aparece ao fundo da página e também como destaque à direita do cabeçalho.
+
+O CSS mantém a arte em proporção, aplica camadas escuras para legibilidade e ajusta o enquadramento para celular. O navegador respeita \`prefers-reduced-motion\`, evitando a animação quando o usuário pede movimento reduzido. A paleta da interface acompanha os tons de azul elétrico, ciano e preto da imagem.
