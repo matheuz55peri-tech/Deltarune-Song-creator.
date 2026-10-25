@@ -597,10 +597,10 @@
   }
 
   function makePreset(kind) {
-    song = fresh();
-    if (kind === "empty") { song.title = "Minha Nova Trilha"; return clone(song); }
+    const project = fresh();
+    if (kind === "empty") { project.title = "Minha Nova Trilha"; return clone(project); }
     if (kind === "battle") {
-      song.title = "Coração Valente"; song.bpm = 166;
+      project.title = "Coração Valente"; project.bpm = 166;
       addNotes(0, [64, 67, 71, 69, 67, 64, 62, 64, 67, 71, 72, 71, 69, 67, 64, 62], Array.from({ length: 16 }, (_, i) => i * 4), 2);
       [0, 16, 32, 48].forEach((s, i) => chord(1, s, [[52, 55, 59], [53, 57, 60], [55, 59, 62], [52, 57, 59]][i], 8));
       addNotes(3, [52, 52, 53, 53, 55, 55, 52, 52], Array.from({ length: 8 }, (_, i) => i * 8), 4);
@@ -609,14 +609,14 @@
       addNotes(7, [62], Array.from({ length: 32 }, (_, i) => i * 2), 1);
       addNotes(2, [72, 69, 71, 72], [12, 28, 44, 60], 3);
     } else if (kind === "mystery") {
-      song.title = "O Segredo da Floresta"; song.bpm = 92;
+      project.title = "O Segredo da Floresta"; project.bpm = 92;
       addNotes(0, [60, 63, 67, 66, 63, 60, 58, 60, 62, 65, 69, 67, 65, 62], [0, 4, 8, 14, 20, 24, 28, 32, 36, 40, 44, 48, 54, 60], 3);
       [0, 16, 32, 48].forEach((s, i) => chord(4, s, [[48, 51, 55], [46, 50, 53], [50, 53, 57], [48, 51, 55]][i], 15));
       addNotes(3, [48, 46, 50, 48], [0, 16, 32, 48], 12);
       addNotes(2, [72, 70, 67, 70, 69, 66], [6, 18, 29, 38, 50, 62], 4);
       addNotes(5, [55, 58, 60, 55, 53, 58, 62, 55], [2, 10, 18, 26, 34, 42, 50, 58], 2);
     } else {
-      song.title = "Um Novo Começo"; song.bpm = 132;
+      project.title = "Um Novo Começo"; project.bpm = 132;
       addNotes(0, [64, 67, 69, 67, 71, 69, 67, 64, 62, 64, 67, 71, 69, 67, 64, 60], Array.from({ length: 16 }, (_, i) => i * 4), 3);
       [0, 16, 32, 48].forEach((s, i) => chord(1, s, [[52, 55, 59], [53, 57, 60], [55, 59, 62], [52, 55, 59]][i], 12));
       addNotes(3, [52, 52, 53, 53, 55, 55, 52, 52], Array.from({ length: 8 }, (_, i) => i * 8), 7);
@@ -626,7 +626,7 @@
       addNotes(6, [48], Array.from({ length: 8 }, (_, i) => i * 8), 1);
       addNotes(7, [60], Array.from({ length: 16 }, (_, i) => i * 4 + 2), 1);
     }
-    return clone(song);
+    return clone(project);
   }
 
   async function chooseAudio(file) {
