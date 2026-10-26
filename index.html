@@ -9,10 +9,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=4">
-  <script defer src="app.js?v=4"></script>
-  <script defer src="analysis-v3.js?v=4"></script>
-  <script defer src="audio-lab.js?v=4"></script>
+  <link rel="stylesheet" href="style.css?v=5">
+  <script defer src="app.js?v=5"></script>
+  <script defer src="composer-pro.js?v=5"></script>
+  <script defer src="analysis-v3.js?v=5"></script>
+  <script defer src="audio-lab.js?v=5"></script>
 </head>
 <body>
   <div class="stars" aria-hidden="true"></div>
@@ -50,26 +51,56 @@
         <div class="transport panel">
           <div class="play-area"><button class="play-btn" id="playBtn" aria-label="Reproduzir música">▶</button><button class="stop-btn" id="stopBtn" aria-label="Parar reprodução">■</button><div><div class="transport-title" id="transportTitle">PRONTO PARA CRIAR</div><div class="transport-sub" id="transportSub">Adicione notas ou dê play na música de exemplo.</div></div></div>
           <div class="meter"><div id="beatMeter" class="beat-meter"><i></i><i></i><i></i><i></i></div><span id="position">01 : 01 : 01</span></div>
-          <div class="transport-actions"><button id="demoBtn" title="Carregar composição de exemplo">✦ EXEMPLO</button><button id="undoBtn" title="Desfazer (Ctrl+Z)">↶ DESFAZER</button><button class="export-button" id="wavBtn">↓ EXPORTAR WAV</button></div>
+          <div class="transport-actions"><button id="demoBtn" title="Carregar composição de exemplo">✦ EXEMPLO</button><button id="undoBtn" title="Desfazer (Ctrl+Z)">↶ DESFAZER</button><button id="redoBtn" title="Refazer (Ctrl+Y)">↷ REFAZER</button><button class="export-button" id="wavBtn">↓ EXPORTAR WAV</button></div>
         </div>
 
         <div class="workspace">
           <aside class="tracks panel">
             <div class="panel-head"><div><span class="micro-label">INSTRUMENTOS</span><h3>Faixas <span id="trackCount">08</span></h3></div><span class="tiny-deco">♫</span></div>
             <div id="trackList" class="track-list" aria-label="Faixas de instrumentos"></div>
+            <div class="mixer-mini"><span class="micro-label">MIXER DA FAIXA SELECIONADA</span><label for="trackVolume">Volume <strong id="trackVolumeLabel">100%</strong></label><input id="trackVolume" type="range" min="0" max="150" value="100"><div class="mixer-help">Regula a faixa na reprodução e no WAV.</div></div>
             <div class="sidebar-tip"><span>✦</span><p>Escolha uma faixa e desenhe notas na grade ao lado. Cada cor é um instrumento.</p></div>
           </aside>
           <div class="editor panel">
             <div class="editor-header"><div><span class="micro-label">PIANO ROLL / EDITOR DE NOTAS</span><h3 id="editorTrack">Lead dos Sonhos</h3></div><div class="editor-settings"><label for="instrumentSelect">TIMBRE</label><select id="instrumentSelect" aria-label="Timbre da faixa"><option value="lead">Lead clássico</option><option value="pulse">Pulse 8-bit</option><option value="triangle">Triângulo NES</option><option value="arp8">Arpejo 8-bit</option><option value="glitch">Cristal digital</option><option value="keys">Teclas encantadas</option><option value="electric">Piano elétrico</option><option value="organ">Órgão da catedral</option><option value="celesta">Celesta de gelo</option><option value="bell">Sinos de cristal</option><option value="marimba">Marimba retrô</option><option value="chime">Carrilhão</option><option value="pluck">Arpejo mágico</option><option value="harp">Harpa estelar</option><option value="bass">Baixo profundo</option><option value="subbass">Sub-bass</option><option value="acid">Baixo ácido</option><option value="pad">Névoa estelar</option><option value="strings">Cordas de batalha</option><option value="choir">Coro etéreo</option><option value="brass">Metais heroicos</option><option value="flute">Flauta do bosque</option><option value="kick">Kick eletrônico</option><option value="hat">Hi-hat chiptune</option><option value="snare">Caixa 8-bit</option><option value="tom">Tom de batalha</option></select><label for="noteLength">DURAÇÃO</label><select id="noteLength"><option value="1">1/16</option><option value="2" selected>1/8</option><option value="4">1/4</option><option value="8">1/2</option></select><button id="previewInstrumentBtn" class="instrument-preview" title="Escutar o instrumento atual antes de inserir notas">▶ OUVIR SOM</button><label class="hover-preview-label" title="Ouvir a altura da nota ao passar o mouse, sem colocar notas"><input id="hoverPreview" type="checkbox"> PRÉVIA AO PASSAR</label><button id="clearTrackBtn">LIMPAR FAIXA</button></div></div>
-            <div class="piano-shell">
+            <div class="composer-tools" aria-label="Ferramentas do piano roll">
+  <div class="tool-group"><button type="button" class="editor-tool active" data-editor-tool="draw" title="Desenhar notas">✎ DESENHAR</button><button type="button" class="editor-tool" data-editor-tool="select" title="Selecionar, mover e redimensionar notas">▣ MOVER</button><button type="button" class="editor-tool" data-editor-tool="erase" title="Apagar notas">⌫ APAGAR</button></div>
+  <label>GRADE <select id="gridSnap"><option value="1">1/16</option><option value="2">1/8</option><option value="4">1/4</option></select></label>
+  <label>TOM <select id="scaleRoot"><option value="0">Dó (C)</option><option value="1">Dó♯ (C♯)</option><option value="2">Ré (D)</option><option value="3">Ré♯ (D♯)</option><option value="4">Mi (E)</option><option value="5">Fá (F)</option><option value="6">Fá♯ (F♯)</option><option value="7">Sol (G)</option><option value="8">Sol♯ (G♯)</option><option value="9">Lá (A)</option><option value="10">Lá♯ (A♯)</option><option value="11">Si (B)</option></select></label>
+  <label>ESCALA <select id="scaleMode"><option value="major">Maior</option><option value="minor">Menor natural</option><option value="pentatonic">Pentatônica</option><option value="chromatic">Cromática</option></select></label>
+  <label class="scale-lock"><input id="scaleLock" type="checkbox"> TRAVAR NA ESCALA</label>
+</div>
+<div class="piano-shell">
               <div class="piano-sidebar"><div class="piano-corner">NOTA</div><div id="pianoKeys" class="piano-keys"></div></div>
               <div id="rollScroll" class="roll-scroll"><div class="roll-inner"><div id="ruler" class="ruler"></div><canvas id="roll" width="1536" height="600" aria-label="Editor de notas; clique e arraste para escrever notas" tabindex="0"></canvas></div></div>
             </div>
-            <div class="editor-bottom"><span><span class="purple">■</span> CLIQUE: ADICIONAR / REMOVER</span><span><span class="purple">■</span> ARRASTE: DESENHAR · BOTÃO DIREITO: APAGAR</span><span id="barSummary">4 COMPASSOS • 4/4</span></div>
+            <div class="note-toolbar">
+  <span class="micro-label">NOTA SELECIONADA: <strong id="selectedNoteLabel">NENHUMA</strong></span>
+  <label for="noteVelocity">INTENSIDADE <span id="noteVelocityLabel">85%</span></label><input id="noteVelocity" type="range" min="10" max="100" value="85" disabled>
+  <button id="transposeDownBtn" title="Descer uma oitava">−12</button><button id="transposeUpBtn" title="Subir uma oitava">+12</button>
+  <button id="copyNoteBtn" title="Copiar nota selecionada">⧉ COPIAR</button><button id="pasteNoteBtn" title="Colar após a nota copiada">▣ COLAR</button>
+  <button id="quantizeTrackBtn" title="Alinhar as notas à grade">✥ QUANTIZAR FAIXA</button>
+  <button id="duplicateBarBtn" title="Duplicar compasso atual para o seguinte">⧉ DUPLICAR COMPASSO</button>
+</div>
+<div class="editor-bottom"><span><span class="purple">■</span> DESENHAR: CRIAR NOTAS</span><span><span class="purple">■</span> MOVER: ARRASTE NOTAS OU SUAS BORDAS · DIREITO: APAGAR</span><span id="barSummary">4 COMPASSOS • 4/4</span></div>
           </div>
         </div>
 
-        <div class="bottom-panels"><div class="panel preset-panel"><div class="panel-head"><div><span class="micro-label">COMECE UMA AVENTURA</span><h3>Escolha uma atmosfera</h3></div></div><div class="presets"><button data-preset="battle"><span>⚔</span><strong>BATALHA</strong><small>Enérgica & intensa</small></button><button data-preset="dream"><span>✧</span><strong>SONHO</strong><small>Delicada & mágica</small></button><button data-preset="mystery"><span>☾</span><strong>MISTÉRIO</strong><small>Sombria & curiosa</small></button><button data-preset="empty"><span>＋</span><strong>EM BRANCO</strong><small>Crie do zero</small></button></div></div>
+        <div class="composer-assistant panel">
+  <div class="panel-head"><div><span class="micro-label">NOVO · COMPOSIÇÃO ASSISTIDA</span><h3>Laboratório de motivos e harmonias <span>✦</span></h3></div><span class="caption-chip">CRIAÇÕES ORIGINAIS</span></div>
+  <p>Inspire-se na construção de temas recorrentes: você cria um pequeno motivo e pode harmonizar, variar ou mudar sua instrumentação.</p>
+  <div class="assistant-controls">
+    <label>PROGRESSÃO <select id="harmonyProgression"><option value="adventure">Aventura: I–V–vi–IV</option><option value="emotional">Emocional: vi–IV–I–V</option><option value="mysterious">Mistério: i–VI–III–VII</option><option value="tension">Tensão: i–iv–V–i</option></select></label>
+    <label>COMPASSO INICIAL <input type="number" id="assistantStartBar" min="1" max="32" value="1"></label>
+    <button id="harmonyBtn">♢ GERAR ACORDES</button><button id="basslineBtn">◈ GERAR BAIXO</button><button id="arpBtn">✦ GERAR ARPEJO</button><button id="variationBtn">♫ VARIAR MELODIA</button>
+  </div>
+  <p class="assistant-disclaimer">As sugestões não copiam músicas de Deltarune. Cada botão adiciona notas ao projeto existente e você pode desfazer o resultado.</p>
+</div>
+<div class="midi-panel panel">
+ <div><span class="micro-label">ARQUIVOS PARA OUTROS EDITORES</span><h3>MIDI &amp; INTERCÂMBIO</h3><p>Importe um MIDI, edite as notas aqui e leve sua música a outros programas. O MIDI guarda notas e tempo; os sintetizadores próprios do site não viajam com o arquivo.</p></div>
+ <div class="midi-buttons"><button id="midiExportBtn">↓ EXPORTAR MIDI</button><button id="midiImportBtn">↑ IMPORTAR MIDI</button><input type="file" accept=".mid,.midi,audio/midi,audio/x-midi" id="midiInput" hidden></div>
+</div>
+<div class="bottom-panels"><div class="panel preset-panel"><div class="panel-head"><div><span class="micro-label">COMECE UMA AVENTURA</span><h3>Escolha uma atmosfera</h3></div></div><div class="presets"><button data-preset="battle"><span>⚔</span><strong>BATALHA</strong><small>Enérgica & intensa</small></button><button data-preset="dream"><span>✧</span><strong>SONHO</strong><small>Delicada & mágica</small></button><button data-preset="mystery"><span>☾</span><strong>MISTÉRIO</strong><small>Sombria & curiosa</small></button><button data-preset="empty"><span>＋</span><strong>EM BRANCO</strong><small>Crie do zero</small></button></div></div>
           <div class="panel export-panel"><span class="micro-label">LEVE SUA MÚSICA COM VOCÊ</span><h3>Pronta para o seu RPG?</h3><p>Salve seus projetos para editar depois, compartilhe o arquivo com amigos ou exporte o áudio como WAV.</p><div class="export-options"><button id="saveProjectBtn">✦ SALVAR NO ESTÚDIO</button><button id="exportJsonBtn">↓ BAIXAR PROJETO</button></div></div></div>
       </section>
 
