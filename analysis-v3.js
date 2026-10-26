@@ -233,6 +233,7 @@
     const phase=findGridOffset(onsets.peaks,bpm);
     const timePerStep=60/bpm/4;
     const totalSteps=clamp(Math.ceil(buffer.duration/timePerStep),64,512);
+    const activeSteps=Math.min(totalSteps,Math.ceil((signal.length/SR)/timePerStep));
     const tracks=blankTracks();
     const features=new Array(count);
     let globalMax=.001;
@@ -245,10 +246,10 @@
       }
     }
     const avgSpectralBrightness={sum:0,count:0};
-    const melodies=new Array(totalSteps).fill(null),basses=melodies.slice();
-    const chords=Array.from({length:totalSteps},()=>[]);
+    const melodies=new Array(activeSteps).fill(null),basses=melodies.slice();
+    const chords=Array.from({length:activeSteps},()=>[]);
     let lastMelody=null,lastBass=null;
-    for(let step=0;step<totalSteps;step++){
+    for(let step=0;step<activeSteps;step++){
       const centerTime=step*timePerStep+timePerStep*.49+phase;
       const central=clamp(Math.round(centerTime*SR/HOP),0,count-1);
       const pooled={score:new Float32Array(86),max:0};
@@ -291,13 +292,13 @@
       avgSpectralBrightness.sum+=high/(low+high+.000001);avgSpectralBrightness.count++;
     }
     // Reduce 1-step errors in note trajectories, then preserve larger rests.
-    tracks[0]=eventsFromSteps(smooth(melodies),1,totalSteps);
-    tracks[3]=eventsFromSteps(smooth(basses),1,totalSteps);
+    tracks[0]=eventsFromSteps(smooth(melodies),1,activeSteps);
+    tracks[3]=eventsFromSteps(smooth(basses),1,activeSteps);
     if(config.complexity!=="melody"){
       const selectedPitches=new Set(chords.flat());
       for(const pitch of selectedPitches){
         const trackSeq=chords.map(x=>x.includes(pitch)?pitch:null);
-        tracks[1].push(...eventsFromSteps(smooth(trackSeq),1,totalSteps,2));
+        tracks[1].push(...eventsFromSteps(smooth(trackSeq),1,activeSteps,2));
       }
       // Only keep consistent chords, not hundreds of short false notes.
       tracks[1].sort((a,b)=>a.s-b.s||a.p-b.p);
@@ -309,7 +310,7 @@
     const onsetStrength=percentile(onsets.peaks.map(p=>p.strength),.3);
     for(const hit of onsets.peaks){
       const step=Math.round((hit.time-phase)/timePerStep);
-      if(step<0||step>=totalSteps||hit.strength<onsetStrength)continue;
+      if(step<0||step>=activeSteps||hit.strength<onsetStrength)continue;
       if(hit.low>hit.high*.72 && hit.low>.02) {
         if(!usedKick.has(step)){
           tracks[6].push({s:step,p:48,d:1,v:.85});usedKick.add(step);
