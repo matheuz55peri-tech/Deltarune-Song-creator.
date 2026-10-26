@@ -20,6 +20,36 @@
     { name: "Estalos / Hat", type: "hat", glyph: "▣", description: "Percussão aguda", gain: .16 }
   ];
 
+  const INSTRUMENTS = [
+    { type:"lead", name:"Lead clássico", group:"Chip" },
+    { type:"pulse", name:"Pulse 25% · 8-bit", group:"Chip" },
+    { type:"triangle", name:"Triângulo NES", group:"Chip" },
+    { type:"arp8", name:"Arpejo 8-bit", group:"Chip" },
+    { type:"glitch", name:"Cristal digital", group:"Chip" },
+    { type:"keys", name:"Teclas encantadas", group:"Teclas" },
+    { type:"electric", name:"Piano elétrico", group:"Teclas" },
+    { type:"organ", name:"Órgão da catedral", group:"Teclas" },
+    { type:"celesta", name:"Celesta de gelo", group:"Teclas" },
+    { type:"bell", name:"Sinos de cristal", group:"Mágicos" },
+    { type:"marimba", name:"Marimba retrô", group:"Mágicos" },
+    { type:"chime", name:"Carrilhão", group:"Mágicos" },
+    { type:"pluck", name:"Arpejo mágico", group:"Mágicos" },
+    { type:"harp", name:"Harpa estelar", group:"Mágicos" },
+    { type:"bass", name:"Baixo profundo", group:"Graves" },
+    { type:"subbass", name:"Sub-bass redondo", group:"Graves" },
+    { type:"acid", name:"Baixo ácido", group:"Graves" },
+    { type:"pad", name:"Névoa estelar", group:"Orquestral" },
+    { type:"strings", name:"Cordas de batalha", group:"Orquestral" },
+    { type:"choir", name:"Coro etéreo", group:"Orquestral" },
+    { type:"brass", name:"Metais heroicos", group:"Orquestral" },
+    { type:"flute", name:"Flauta do bosque", group:"Orquestral" },
+    { type:"kick", name:"Kick eletrônico", group:"Ritmo" },
+    { type:"hat", name:"Hi-hat chiptune", group:"Ritmo" },
+    { type:"snare", name:"Caixa 8-bit", group:"Ritmo" },
+    { type:"tom", name:"Tom de batalha", group:"Ritmo" }
+  ];
+  const INSTRUMENT_SET = new Set(INSTRUMENTS.map(x=>x.type));
+
   const $ = (id) => document.getElementById(id);
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -28,7 +58,7 @@
   const isBlack = (midi) => [1, 3, 6, 8, 10].includes(midi % 12);
   const fresh = () => ({
     version: 2, title: "Minha Nova Trilha", bpm: 132, bars: 4, swing: 0, volume: 74,
-    tracks: TRACKS.map(() => ({ notes: [], muted: false, solo: false }))
+    tracks: TRACKS.map((track) => ({ notes: [], muted: false, solo: false, instrument:track.type }))
   });
   let song = fresh();
   let selected = 0;
@@ -82,6 +112,7 @@
       return {
         muted: !!track.muted,
         solo: !!track.solo,
+        instrument: INSTRUMENT_SET.has(track.instrument) ? track.instrument : TRACKS[data.tracks.indexOf(track)].type,
         notes: rawNotes.filter((n) => Number.isFinite(n.s) && Number.isFinite(n.p) && Number.isFinite(n.d))
           .map((n) => ({ s: clamp(Math.round(n.s), 0, projectSteps - 1), p: clamp(Math.round(n.p), 45, 72), d: clamp(Math.round(n.d), 1, 32), v: .85 }))
       };
@@ -151,7 +182,7 @@
       const title = document.createElement("strong");
       title.textContent = config.name;
       const subtitle = document.createElement("small");
-      subtitle.textContent = config.description + " · " + song.tracks[i].notes.length + " notas";
+      subtitle.textContent = (INSTRUMENTS.find(x=>x.type===song.tracks[i].instrument)?.name || config.description) + " · " + song.tracks[i].notes.length + " notas";
       meta.append(title, subtitle);
       const mute = document.createElement("button");
       mute.className = "track-tool" + (song.tracks[i].muted ? " on" : "");
@@ -176,6 +207,7 @@
     });
     $("editorTrack").textContent = TRACKS[selected].name;
     $("editorTrack").style.color = COLORS[selected];
+    $("instrumentSelect").value = song.tracks[selected].instrument || TRACKS[selected].type;
   }
 
   function renderPiano() {
@@ -338,6 +370,9 @@
 
   function tone(ctx, out, type, midi, t, duration, gain) {
     duration = Math.max(.055, duration);
+    if (["pulse","triangle","arp8","glitch","electric","organ","celesta","marimba","chime","harp","subbass","acid","strings","choir","brass","flute","snare","tom"].includes(type)) {
+      return extendedTone(ctx, out, type, midi, t, duration, gain);
+    }
     if (type === "kick") {
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.type = "sine";
@@ -397,21 +432,105 @@
     }
   }
 
+
+  // Additional original retro/synthetic timbres for roleplaying-game scores.
+  function extendedTone(ctx, out, type, midi, t, duration, gain) {
+    const bassType = ["subbass","acid"].includes(type);
+    const base = freq(bassType ? midi - 12 : midi);
+    const percussion = ["snare","tom"].includes(type);
+    const attack = ["strings","choir","brass"].includes(type) ? .065 : .004;
+    const release = ["strings","choir"].includes(type) ? .30 : ["flute","organ"].includes(type) ? .14 : .10;
+    const short = ["celesta","marimba","chime","harp","glitch","electric","arp8"].includes(type);
+    const sustain = short ? Math.min(duration,.24) : duration;
+    const end = t + Math.max(.09,sustain) + release;
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(.0001,t);
+    env.gain.linearRampToValueAtTime(gain*(percussion?1:.83),t+attack);
+    if(short) env.gain.exponentialRampToValueAtTime(.0001,end);
+    else {
+      env.gain.setValueAtTime(gain*.7,t+Math.max(attack+.01,sustain*.8));
+      env.gain.exponentialRampToValueAtTime(.0001,end);
+    }
+    const filter=ctx.createBiquadFilter();
+    filter.type="lowpass";
+    const freqCut={
+      pulse:4600,triangle:5500,arp8:4400,glitch:6100,electric:3000,organ:3900,
+      celesta:5100,marimba:1900,chime:8000,harp:4500,subbass:500,acid:1850,
+      strings:3100,choir:1750,brass:2300,flute:2600,snare:8000,tom:1800
+    };
+    filter.frequency.setValueAtTime(freqCut[type] || 4100,t);
+    if(type==="brass"||type==="acid"){
+      filter.frequency.setValueAtTime(650,t);
+      filter.frequency.exponentialRampToValueAtTime(freqCut[type],t+.065);
+      filter.frequency.exponentialRampToValueAtTime(700,t+Math.max(.08,sustain));
+    }
+    filter.connect(env); env.connect(out);
+    const specs = ({
+      pulse:[["square",1,.9],["square",2,.17]],
+      triangle:[["triangle",1,1]],
+      arp8:[["square",1,.8],["triangle",2,.23]],
+      glitch:[["square",1,.55],["sine",2.991,.28]],
+      electric:[["triangle",1,1],["sine",2.003,.20],["sine",3.01,.08]],
+      organ:[["sine",1,.75],["sine",2,.32],["sine",3,.25],["sine",4,.12]],
+      celesta:[["sine",1,.9],["sine",2.98,.34],["sine",4.20,.13]],
+      marimba:[["sine",1,1],["sine",3.91,.17]],
+      chime:[["sine",1,.82],["sine",2.64,.41],["sine",4.06,.16]],
+      harp:[["triangle",1,.8],["sine",2,.3]],
+      subbass:[["sine",1,1],["triangle",2,.18]],
+      acid:[["sawtooth",1,.7],["square",2,.12]],
+      strings:[["sawtooth",1,.42],["sawtooth",1.003,.42],["triangle",2,.14]],
+      choir:[["sine",1,.65],["triangle",2,.19],["sine",3,.10]],
+      brass:[["sawtooth",1,.65],["square",2,.17]],
+      flute:[["sine",1,.8],["triangle",2,.07]],
+      snare:[["triangle",1,.32]],
+      tom:[["sine",1,1]]
+    })[type] || [["sine",1,1]];
+    for (const [wave,multiple,level] of specs){
+      const osc=ctx.createOscillator(),amp=ctx.createGain();
+      osc.type=wave;
+      osc.frequency.setValueAtTime(base*multiple,t);
+      if(["snare","tom"].includes(type))
+        osc.frequency.exponentialRampToValueAtTime(base*multiple*.5,t+.14);
+      if(type==="flute"||type==="strings"||type==="choir"){
+        const vibrato=ctx.createOscillator(),depth=ctx.createGain();
+        vibrato.frequency.value=type==="flute"?5:4;
+        depth.gain.value=base*(type==="flute"?.004:.002);
+        vibrato.connect(depth);depth.connect(osc.frequency);
+        vibrato.start(t);vibrato.stop(end+.015);
+      }
+      amp.gain.value=level;
+      osc.connect(amp);amp.connect(filter);
+      osc.start(t);osc.stop(end+.025);
+    }
+    if(type==="snare"){
+      const size=Math.max(400,Math.floor(ctx.sampleRate*.17));
+      const buffer=ctx.createBuffer(1,size,ctx.sampleRate),data=buffer.getChannelData(0);
+      for(let i=0;i<size;i++) data[i]=Math.random()*2-1;
+      const src=ctx.createBufferSource(),high=ctx.createBiquadFilter(),noiseGain=ctx.createGain();
+      src.buffer=buffer;high.type="highpass";high.frequency.value=1500;
+      noiseGain.gain.setValueAtTime(gain*.85,t);
+      noiseGain.gain.exponentialRampToValueAtTime(.0001,t+.15);
+      src.connect(high);high.connect(noiseGain);noiseGain.connect(out);
+      src.start(t);src.stop(t+.17);
+    }
+  }
+
   function audible(i) {
     const hasSolo = song.tracks.some((t) => t.solo);
     return !song.tracks[i].muted && (!hasSolo || song.tracks[i].solo);
   }
 
   function previewTrack(track) {
-    const samplePitch = track === 3 ? 57 : track === 6 ? 48 : track === 7 ? 60 : 64;
+    const inst = song.tracks[track].instrument || TRACKS[track].type;
+    const samplePitch = ["bass","subbass","acid"].includes(inst) ? 57 : ["kick","tom"].includes(inst) ? 48 : ["hat","snare"].includes(inst) ? 60 : 64;
     audition(track, samplePitch, track >= 6 ? .12 : .55);
-    if (track < 6) setTimeout(() => audition(track, samplePitch + (track === 3 ? 0 : 3), .38), 170);
+    if (!["kick","hat","snare","tom"].includes(song.tracks[track].instrument) ) setTimeout(() => audition(track, samplePitch + (track === 3 ? 0 : 3), .38), 170);
   }
 
   function audition(track, pitch, length) {
     try {
       const ctx = getContext();
-      tone(ctx, audioMaster, TRACKS[track].type, pitch, ctx.currentTime + .007, length, TRACKS[track].gain * .8);
+      tone(ctx, audioMaster, song.tracks[track].instrument || TRACKS[track].type, pitch, ctx.currentTime + .007, length, TRACKS[track].gain * .8);
     } catch (err) { toast(err.message); }
   }
 
@@ -420,7 +539,7 @@
     song.tracks.forEach((track, i) => {
       if (!audible(i)) return;
       track.notes.forEach((n) => {
-        if (n.s === step) tone(audioCtx, audioMaster, TRACKS[i].type, n.p, time, n.d * stepSeconds() * .92, TRACKS[i].gain);
+        if (n.s === step) tone(audioCtx, audioMaster, track.instrument || TRACKS[i].type, n.p, time, n.d * stepSeconds() * .92, TRACKS[i].gain);
       });
     });
     scheduled.push({ step: step, time: time });
@@ -552,7 +671,7 @@
         if (!audible(i)) return;
         track.notes.forEach((n) => {
           const shift = n.s % 2 ? song.swing / 100 * stepSeconds() : 0;
-          tone(offline, master, TRACKS[i].type, n.p, n.s * stepSeconds() + .01 + shift, n.d * stepSeconds() * .92, TRACKS[i].gain);
+          tone(offline, master, track.instrument || TRACKS[i].type, n.p, n.s * stepSeconds() + .01 + shift, n.d * stepSeconds() * .92, TRACKS[i].gain);
         });
       });
       const buffer = await offline.startRendering();
@@ -784,6 +903,11 @@
     $("masterVolume").addEventListener("input", (e) => { song.volume = Number(e.target.value); $("volumeVal").textContent = song.volume + "%"; if (audioMaster) audioMaster.gain.setTargetAtTime(song.volume / 100 * .65, audioCtx.currentTime, .03); persist(); });
     $("songName").addEventListener("input", (e) => { song.title = e.target.value; persist(); });
     $("noteLength").addEventListener("change", (e) => { noteDuration = Number(e.target.value); });
+    $("instrumentSelect").addEventListener("change", (e) => {
+      if (!INSTRUMENT_SET.has(e.target.value)) return;
+      remember(); song.tracks[selected].instrument = e.target.value;
+      commitChange(); previewTrack(selected);
+    });
     $("previewInstrumentBtn").addEventListener("click", () => previewTrack(selected));
     $("measures").addEventListener("change", (e) => {
       if(playing) stop();
@@ -877,6 +1001,7 @@
       const bound = destination.bars * 16;
       arrangement.tracks.forEach((notes,i) => {
         if(i >= 8 || !Array.isArray(notes)) return;
+        if (INSTRUMENT_SET.has(arrangement.instruments?.[i]) && mode === "replace") destination.tracks[i].instrument = arrangement.instruments[i];
         const incoming = notes.slice(0,3000).filter(n => Number.isFinite(n.s) && Number.isFinite(n.p) && Number.isFinite(n.d))
           .map(n => ({s:clamp(Math.round(n.s),0,bound-1),p:clamp(Math.round(n.p),45,72),d:clamp(Math.round(n.d),1,32),v:.85}));
         destination.tracks[i].notes = mode === "merge" ? destination.tracks[i].notes.concat(incoming) : incoming;
