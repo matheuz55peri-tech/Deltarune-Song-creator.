@@ -355,12 +355,12 @@
     if (lastPainted === key) return;
     lastPainted = key;
     const notes = song.tracks[selected].notes;
-    const existing = notes.findIndex((n) => n.s === cell.s && n.p === cell.p);
+    const existing = noteAt(cell);
     if (first) {
       drawMode = e.button === 2 || e.altKey || existing !== -1 ? "erase" : "add";
       remember();
     }
-    if (drawMode === "erase" && existing !== -1) notes.splice(existing, 1);
+    if (drawMode === "erase" && existing !== -1) {notes.splice(existing, 1);selectedNote=-1;}
     else if (drawMode === "add" && existing === -1) {
       const step=snapGrid(cell.s),pitch=nearestScale(cell.p);
       if(!notes.some(n=>n.s===step && n.p===pitch)){
