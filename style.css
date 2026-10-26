@@ -235,3 +235,8 @@ footer {border-color:#1b5270}
 @media(max-width:1080px){.voice-layout{grid-template-columns:1fr}.voice-info{display:block}}
 @media(max-width:900px){.analysis-options{grid-template-columns:repeat(2,minmax(0,1fr))}.voice-panel,.voice-info{padding:18px}}
 @media(max-width:600px){.analysis-options{grid-template-columns:1fr}.record-controls button{flex:1;min-width:0;padding:11px 8px;font-size:9px}.voice-heading{gap:10px}.voice-emoji{width:45px;height:45px;flex-basis:45px}.voice-heading h3{font-size:17px}.voice-panel,.voice-info{padding:13px}.nav{justify-content:flex-start}.nav-btn{flex-shrink:0}.editor-settings{justify-content:flex-start}.import-options{grid-template-columns:1fr}}
+
+/* Piano note audition before writing */
+.hover-preview-label{display:inline-flex;align-items:center;gap:5px;border:1px solid #31677d;border-radius:6px;background:#122d3e;padding:8px 10px;color:#ade9f3;font-size:9px;font-weight:800;letter-spacing:.4px;cursor:pointer;white-space:nowrap}
+.hover-preview-label input{margin:0;width:13px;height:13px;accent-color:#2eecff;cursor:pointer}
+.hover-preview-label:has(input:checked){background:#1c5668;border-color:#3fe7f4;color:#fff}
