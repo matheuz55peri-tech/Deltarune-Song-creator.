@@ -257,3 +257,57 @@ footer {border-color:#1b5270}
 .conversion-feedback{font-size:10px;border-top:1px solid #30566b;padding-top:12px;color:#88bbcf}
 .track-list{overflow-y:auto;max-height:620px;scrollbar-color:#376879 #0f1a28}
 @media(max-width:750px){.reference-buttons button{flex:1}.reference-bpm{flex-wrap:wrap}.editor-settings #instrumentSelect{max-width:145px}}
+
+
+/* V5: piano-roll studio workflow, mixer, theory, MIDI exchange */
+.composer-tools,.note-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 14px;background:#0b1e2cf5;border-bottom:1px solid #335773}
+.composer-tools label,.note-toolbar label{font-size:9px;letter-spacing:.65px;font-weight:800;color:#b4d8e8;display:flex;align-items:center;gap:6px}
+.composer-tools select{border:1px solid #3b6680;border-radius:6px;background:#122e40;color:#dffaff;padding:7px;font-size:10px;font-weight:700}
+.tool-group{display:flex;gap:4px;flex-wrap:wrap}
+.editor-tool,.note-toolbar button,.assistant-controls button,.midi-buttons button{border:1px solid #39657a;border-radius:6px;padding:9px 10px;background:#193247;color:#d3f5ff;font-size:9.5px;font-weight:800;letter-spacing:.2px}
+.editor-tool:hover,.note-toolbar button:hover,.assistant-controls button:hover,.midi-buttons button:hover{background:#265777;border-color:#66cde5}
+.editor-tool.active{background:linear-gradient(110deg,#35dfee,#0c778e);border-color:#60f5ff;color:#061a2d}
+.composer-tools .scale-lock{cursor:pointer;background:#172e3b;border:1px dashed #355d76;border-radius:6px;padding:7px 9px}
+.scale-lock input{accent-color:#4df8ed;margin:0}
+.note-toolbar{border-bottom:0;border-top:1px solid #26465a;gap:8px}
+.note-toolbar .micro-label{flex:1;min-width:140px}
+.note-toolbar .micro-label strong{display:inline;font-family:monospace;font-size:10px;color:#84f7ee}
+.note-toolbar input[type=range]{max-width:95px;accent-color:#4cecf5}
+.note-toolbar button{padding:9px 11px}
+.mixer-mini{padding:15px;border-top:1px solid #31546b;border-bottom:1px solid #31546b;background:#0f2738}
+.mixer-mini>span{display:block;margin-bottom:9px}
+.mixer-mini label{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:10px;color:#cfedfa}
+.mixer-mini label strong{font-family:monospace;color:#64f6e5}
+.mixer-mini input{width:100%;accent-color:#33edfa;display:block;margin:9px 0}
+.mixer-help{font-size:9px;color:#9cbccc}
+.composer-assistant,.midi-panel{margin-top:14px;padding:20px}
+.composer-assistant>.panel-head h3{font-size:17px}
+.composer-assistant>.panel-head h3 span{color:#77ffe6}
+.composer-assistant>p,.midi-panel p{font-size:11px;color:#a9c6d3;line-height:1.8}
+.assistant-controls{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:14px 0 9px}
+.assistant-controls label{display:flex;flex-direction:column;gap:6px;color:#a2cde0;font-weight:800;font-size:9px;letter-spacing:.7px}
+.assistant-controls select,.assistant-controls input{background:#0c2536;color:#effaff;border:1px solid #3e7288;border-radius:6px;padding:10px 12px;font-size:10px;min-width:95px}
+.assistant-controls select{min-width:200px}
+.assistant-controls button{padding:11px 13px}
+.composer-assistant .assistant-disclaimer{margin:12px 0 0;color:#7cb3c1}
+.midi-panel{display:flex;gap:15px;align-items:center;justify-content:space-between}
+.midi-panel h3{font-size:18px;margin:2px 0 8px}
+.midi-panel p{margin:0;max-width:700px}
+.midi-buttons{display:flex;flex-wrap:wrap;gap:8px;flex-shrink:0}
+.midi-buttons button{padding:12px 14px;white-space:nowrap}
+.midi-buttons button:first-child{background:#2f8495;color:#f5ffff;border-color:#48e2ee}
+@media(max-width:1040px){
+ .midi-panel{align-items:flex-start;flex-direction:column}
+ .assistant-controls{align-items:stretch}
+ .assistant-controls>label{min-width:180px;flex:1}
+}
+@media(max-width:620px){
+ .composer-tools,.note-toolbar{padding:9px 8px;gap:6px}
+ .tool-group{width:100%}
+ .tool-group button{flex:1}
+ .composer-tools select{max-width:135px}
+ .assistant-controls button{flex:1;min-width:130px}
+ .midi-buttons{width:100%}.midi-buttons button{flex:1}
+ .composer-assistant,.midi-panel{padding:12px}
+ .note-toolbar .micro-label{flex-basis:100%}
+}
