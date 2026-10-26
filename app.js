@@ -355,28 +355,62 @@
 
   function initGridInteractions() {
     canvas.addEventListener("contextmenu", (e) => e.preventDefault());
-    canvas.addEventListener("pointerdown", (e) => {
-      if (e.button !== 0 && e.button !== 2) return;
-      e.preventDefault();
-      drawing = true;
-      lastPainted = "";
+    canvas.addEventListener("pointerdown",(e)=>{
+      if(e.button!==0&&e.button!==2)return;
+      const cell=gridCell(e);if(!cell)return;
+      e.preventDefault();drawing=true;lastPainted="";
       canvas.setPointerCapture(e.pointerId);
-      paint(e, true);
+      const hit=noteAt(cell);
+      if(e.button===2 || e.altKey || editorTool==="erase"){
+        activeDrag=null;
+        if(hit>=0){remember();song.tracks[selected].notes.splice(hit,1);selectedNote=-1;commitChange();}
+        return;
+      }
+      if(editorTool==="select"){
+        selectedNote=hit;activeDrag=null;
+        if(hit>=0){
+          remember();
+          const n=song.tracks[selected].notes[hit];
+          const rect=canvas.getBoundingClientRect();
+          const localX=(e.clientX-rect.left)/rect.width*canvas.width;
+          const distance=(n.s+n.d)*CELL_WIDTH-localX;
+          activeDrag={index:hit,startCell:cell,note:{...n},type:distance<9&&distance>-6?"resize":"move"};
+        }
+        refreshSelectedNote();drawRoll();return;
+      }
+      activeDrag=null;
+      paint(e,true);
     });
-    canvas.addEventListener("pointermove", (e) => {
-      if (drawing) { paint(e, false); return; }
-      if (!$("hoverPreview").checked || e.pointerType !== "mouse") return;
-      const cell = gridCell(e), now = performance.now();
-      if (cell && cell.p !== hoverNote && now - lastHoverAt > 120) {
-        hoverNote = cell.p;
-        lastHoverAt = now;
-        audition(selected, cell.p, .13);
+    canvas.addEventListener("pointermove",(e)=>{
+      if(!drawing){
+        if(!$("hoverPreview").checked || e.pointerType!=="mouse")return;
+        const cell=gridCell(e),now=performance.now();
+        if(cell && cell.p!==hoverNote && now-lastHoverAt>120){
+          hoverNote=cell.p;lastHoverAt=now;audition(selected,cell.p,.13);
+        }
+        return;
+      }
+      if(activeDrag){
+        const cell=gridCell(e);if(!cell)return;
+        const {index,note,startCell,type}=activeDrag;
+        const n=song.tracks[selected].notes[index];if(!n)return;
+        const delta=snapGrid(cell.s)-snapGrid(startCell.s);
+        if(type==="resize") n.d=clamp(note.d+delta,1,Math.min(32,STEP_COUNT-note.s));
+        else{
+          n.s=clamp(note.s+delta,0,STEP_COUNT-note.d);
+          n.p=nearestScale(clamp(note.p+(cell.p-startCell.p),45,72));
+        }
+        drawRoll();refreshSelectedNote();persist();
+      }else if(editorTool==="draw"&&e.buttons===1) paint(e,false);
+      else if(editorTool==="erase"&&e.buttons){
+        const i=noteAt(gridCell(e));
+        if(i>=0){remember();song.tracks[selected].notes.splice(i,1);selectedNote=-1;commitChange();}
       }
     });
-    canvas.addEventListener("pointerleave", () => { hoverNote = -1; });
-    ["pointerup", "pointercancel", "lostpointercapture"].forEach((eventName) => canvas.addEventListener(eventName, () => {
-      drawing = false;
-      lastPainted = "";
+    canvas.addEventListener("pointerleave",()=>{hoverNote=-1;});
+    ["pointerup","pointercancel","lostpointercapture"].forEach(eventName=>canvas.addEventListener(eventName,()=>{
+      if(activeDrag)renderTracks();
+      drawing=false;activeDrag=null;lastPainted="";
     }));
     $("pianoKeys").addEventListener("click", (e) => {
       const key = e.target.closest("[data-pitch]");
