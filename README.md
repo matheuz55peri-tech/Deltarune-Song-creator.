@@ -4,6 +4,24 @@ Um **estúdio musical online gratuito para criar trilhas originais de RPG**, com
 
 > Projeto independente de fãs. Não é afiliado a Toby Fox, DELTARUNE ou seus distribuidores. As músicas de exemplo foram compostas para este projeto, sem uso de gravações, sprites ou faixas oficiais.
 
+## Estúdio V5 — edição avançada, arranjos e MIDI
+
+A versão atual introduz ferramentas inspiradas no fluxo de trabalho dos editores MIDI clássicos (em especial o piano roll e as teclas de atalho do LMMS) e no uso de motivos recorrentes em RPGs. Todas as sugestões musicais geradas pelo aplicativo são originais.
+
+**Novidades:**
+- **Desenhar, Mover e Apagar:** selecione notas, mova na grade ou arraste sua borda direita para redimensionar. Clique direito apaga, e o modo selecionado é destacado.
+- **Escala e tonalidade:** escolha nota fundamental (12 opções), maior, menor, pentatônica ou cromática. A grade sinaliza notas fora da escala, e o bloqueio opcional ajusta o desenho à nota permitida mais próxima.
+- **Intensidade:** seleção de nota com controle de velocity; **mixer de volume por faixa** aplicado na reprodução e na exportação WAV, ambos preservados no projeto.
+- **Edição prática:** desfazer, refazer, copiar e colar nota, transposição de oitava, quantização da faixa e duplicar compasso.
+- **Metrônomo** opcional, **loop** com início/fim configuráveis e clique na régua para escolher a reprodução.
+- **Assistente de composição:** progressões próprias de acordes, baixos, arpejos e variações de um motivo criado pelo usuário. As sugestões são adicionadas ao projeto, não substituem suas melodias.
+- **MIDI 1.0:** importe arquivos com eventos comuns de notas, tempo e faixas e exporte seus projetos para um arquivo .mid reproduzível em outros editores. Sons próprios do site não são incorporados ao MIDI; instrumentos General MIDI são apenas aproximações. Formatos SMPTE incomuns não são suportados. Importação fica limitada a oito faixas e até 32 compassos.
+- **Guia de composição dentro do site:** dicas de motivos, camadas, contraste e edição, com links para referências didáticas.
+
+**Cuidados:** o piano roll trabalha entre MIDI 45 e 72, e notas importadas fora dessa faixa são deslocadas em oitavas. A análise de gravações musicais completas continua experimental e não oferece separação neural de instrumentos. O site é estático e roda localmente no navegador; confira os recursos de microfone no navegador que você utiliza.
+
+**Referências consultadas:** [Wiki de motivos da trilha de Deltarune](https://deltarune.wiki/w/Leitmotifs), [Vídeos introdutórios de composição e piano roll no LMMS](https://docs.lmms.io/user-manual/resources/videos), [Mapa de atalhos de piano roll do LMMS](https://docs.lmms.io/user-manual/resources/key-mappings) e [boas práticas de Web Audio da MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Best_practices).
+
 ## ✨ O que está pronto
 
 ### Conversor V3 e nova biblioteca de timbres (outubro de 2026)
