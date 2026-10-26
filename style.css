@@ -240,3 +240,20 @@ footer {border-color:#1b5270}
 .hover-preview-label{display:inline-flex;align-items:center;gap:5px;border:1px solid #31677d;border-radius:6px;background:#122d3e;padding:8px 10px;color:#ade9f3;font-size:9px;font-weight:800;letter-spacing:.4px;cursor:pointer;white-space:nowrap}
 .hover-preview-label input{margin:0;width:13px;height:13px;accent-color:#2eecff;cursor:pointer}
 .hover-preview-label:has(input:checked){background:#1c5668;border-color:#3fe7f4;color:#fff}
+
+
+/* V3: original-vs-synth comparison and expanded retro sound bank */
+#instrumentSelect{max-width:185px;background:#0e2738;border:1px solid #3ea7bc;border-radius:5px;color:#cbfaff;padding:8px 9px;font-size:11px;font-weight:700}
+.reference-audio{margin:17px 0;padding:16px 17px;background:linear-gradient(115deg,#0c2c3e,#152334);border:1px solid #3b829b;border-radius:10px}
+.reference-title{font-family:'Press Start 2P',monospace;font-size:9px;color:#82eeff;letter-spacing:.15px;margin-bottom:10px}
+.reference-audio p{font-size:11px;line-height:1.75;color:#afcddc;margin:0 0 13px}
+.reference-audio strong{color:#f6ffff}
+.reference-buttons{display:flex;flex-wrap:wrap;gap:8px}
+.reference-buttons button{background:#163e52;border:1px solid #5299aa;color:#d1faff;font-size:10px;font-weight:800;padding:11px 12px;border-radius:6px}
+.reference-buttons button:nth-child(2){background:#206478;color:#efffff;border-color:#47d5e4}
+.reference-buttons button:hover{filter:brightness(1.2)}
+.reference-bpm{display:flex;align-items:center;gap:12px;font-size:9px;font-weight:800;letter-spacing:1px;margin:15px 0;color:#b5dce5}
+.reference-bpm select{background:#082a3e;border:1px solid #3f92ab;padding:8px 11px;color:white;border-radius:6px;font-size:11px}
+.conversion-feedback{font-size:10px;border-top:1px solid #30566b;padding-top:12px;color:#88bbcf}
+.track-list{overflow-y:auto;max-height:620px;scrollbar-color:#376879 #0f1a28}
+@media(max-width:750px){.reference-buttons button{flex:1}.reference-bpm{flex-wrap:wrap}.editor-settings #instrumentSelect{max-width:145px}}
