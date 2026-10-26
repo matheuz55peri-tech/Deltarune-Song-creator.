@@ -73,6 +73,7 @@
   let heardStep = 0;
   let nextStepTime = 0;
   let schedulerId = null;
+  let metronomeEnabled=false, loopEnabled=true, loopStart=0, loopEnd=STEP_COUNT;
   let frameId = null;
   let scheduled = [];
   let savedTimer = null;
@@ -153,7 +154,19 @@
   }
 
   function syncForm() {
+    const wholeSongLoop=loopEnd>=STEP_COUNT;
     STEP_COUNT = (song.bars || 4) * 16;
+    loopStart=clamp(loopStart,0,STEP_COUNT-16);
+    loopEnd=wholeSongLoop?STEP_COUNT:clamp(loopEnd,loopStart+16,STEP_COUNT);
+    const from=$("loopStartBar"),to=$("loopEndBar");
+    from.replaceChildren();to.replaceChildren();
+    for(let bar=1;bar<=STEP_COUNT/16;bar++){
+      const a=document.createElement("option"),b=document.createElement("option");
+      a.value=String(bar);a.textContent=String(bar);
+      b.value=String(bar);b.textContent=String(bar);
+      from.appendChild(a);to.appendChild(b);
+    }
+    from.value=String(loopStart/16+1);to.value=String(loopEnd/16);
     canvas.width = STEP_COUNT * CELL_WIDTH;
     canvas.style.width = canvas.width + "px";
     document.querySelector(".roll-inner").style.width = canvas.width + "px";
@@ -631,6 +644,7 @@
         if (n.s === step) tone(audioCtx, audioMaster, track.instrument || TRACKS[i].type, n.p, time, n.d * stepSeconds() * .92, TRACKS[i].gain * (track.volume ?? 100)/100 * (n.v ?? .85));
       });
     });
+    if(metronomeEnabled && step%4===0) tone(audioCtx,audioMaster,"bell",step%16===0?84:79,time,.09,.045);
     scheduled.push({ step: step, time: time });
     if (scheduled.length > 120) scheduled.shift();
   }
@@ -638,10 +652,15 @@
   function tick() {
     if (!playing || !audioCtx) return;
     while (nextStepTime < audioCtx.currentTime + .16) {
+      const end=loopEnabled?loopEnd:STEP_COUNT;
+      if(playStep>=end){
+        if(loopEnabled)playStep=loopStart;
+        else {stop();return;}
+      }
       const shift = playStep % 2 ? song.swing / 100 * stepSeconds() : 0;
       scheduleStep(playStep, nextStepTime + shift);
       nextStepTime += stepSeconds();
-      playStep = (playStep + 1) % STEP_COUNT;
+      playStep++;
     }
   }
 
@@ -671,6 +690,7 @@
   function start() {
     try { getContext(); } catch (err) { toast(err.message); return; }
     if (playing) return;
+    if(loopEnabled && (playStep<loopStart || playStep>=loopEnd))playStep=loopStart;
     playing = true;
     audioMaster.gain.setTargetAtTime(song.volume / 100 * .65, audioCtx.currentTime, .02);
     nextStepTime = audioCtx.currentTime + .04;
@@ -985,6 +1005,32 @@
     document.querySelectorAll(".nav-btn").forEach((b) => b.addEventListener("click", () => switchPage(b.dataset.page)));
     $("playBtn").addEventListener("click", togglePlay);
     $("stopBtn").addEventListener("click", stop);
+    $("metroBtn").addEventListener("click",()=>{
+      metronomeEnabled=!metronomeEnabled;
+      $("metroBtn").textContent=metronomeEnabled?"♩ METRÔNOMO ON":"♩ METRÔNOMO OFF";
+      $("metroBtn").classList.toggle("active",metronomeEnabled);
+    });
+    $("loopBtn").addEventListener("click",()=>{
+      loopEnabled=!loopEnabled;
+      $("loopBtn").textContent=loopEnabled?"⟲ LOOP ON":"⟲ LOOP OFF";
+      $("loopBtn").classList.toggle("active",loopEnabled);
+    });
+    $("loopStartBar").addEventListener("change",e=>{
+      loopStart=clamp((Number(e.target.value)-1)*16,0,loopEnd-16);
+      e.target.value=String(loopStart/16+1);
+      if(!playing){playStep=loopStart;heardStep=loopStart;updatePosition();drawRoll();}
+    });
+    $("loopEndBar").addEventListener("change",e=>{
+      loopEnd=clamp(Number(e.target.value)*16,loopStart+16,STEP_COUNT);
+      e.target.value=String(loopEnd/16);
+    });
+    $("ruler").addEventListener("click",e=>{
+      if(playing){toast("Pause antes de escolher um ponto da música.");return;}
+      const rect=$("ruler").getBoundingClientRect();
+      const s=Math.floor((e.clientX-rect.left)/rect.width*STEP_COUNT/4)*4;
+      playStep=clamp(s,0,STEP_COUNT-1);heardStep=playStep;
+      updatePosition();drawRoll();
+    });
     $("bpm").addEventListener("change", (e) => {
       song.bpm = clamp(parseInt(e.target.value, 10) || 132, 50, 240);
       e.target.value = song.bpm; persist();
