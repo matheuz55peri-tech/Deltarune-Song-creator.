@@ -58,12 +58,14 @@
   const isBlack = (midi) => [1, 3, 6, 8, 10].includes(midi % 12);
   const fresh = () => ({
     version: 2, title: "Minha Nova Trilha", bpm: 132, bars: 4, swing: 0, volume: 74,
-    tracks: TRACKS.map((track) => ({ notes: [], muted: false, solo: false, instrument:track.type }))
+    tracks: TRACKS.map((track) => ({ notes: [], muted: false, solo: false, volume:100, instrument:track.type }))
   });
   let song = fresh();
   let selected = 0;
   let noteDuration = 2;
   let undoStack = [];
+  let redoStack = [];
+  let editorTool = "draw", selectedNote = -1, activeDrag = null, noteClipboard = null;
   let audioCtx = null;
   let audioMaster = null;
   let playing = false;
@@ -113,9 +115,10 @@
       return {
         muted: !!track.muted,
         solo: !!track.solo,
+        volume:clamp(Number(track.volume ?? 100),0,150),
         instrument: INSTRUMENT_SET.has(track.instrument) ? track.instrument : TRACKS[data.tracks.indexOf(track)].type,
         notes: rawNotes.filter((n) => Number.isFinite(n.s) && Number.isFinite(n.p) && Number.isFinite(n.d))
-          .map((n) => ({ s: clamp(Math.round(n.s), 0, projectSteps - 1), p: clamp(Math.round(n.p), 45, 72), d: clamp(Math.round(n.d), 1, 32), v: .85 }))
+          .map((n) => ({ s: clamp(Math.round(n.s), 0, projectSteps - 1), p: clamp(Math.round(n.p), 45, 72), d: clamp(Math.round(n.d), 1, 32), v: clamp(Number.isFinite(n.v) ? Number(n.v) : .85, .1, 1) }))
       };
     });
     return parsed;
@@ -124,6 +127,7 @@
   function remember() {
     undoStack.push(clone(song));
     if (undoStack.length > 45) undoStack.shift();
+    redoStack = [];
   }
 
   function persist() {
@@ -139,7 +143,7 @@
     stop();
     remember();
     song = validateProject(next);
-    selected = 0;
+    selected = 0; selectedNote = -1;
     syncForm();
     renderTracks();
     renderPiano();
@@ -163,6 +167,7 @@
     $("masterVolume").value = song.volume;
     $("volumeVal").textContent = song.volume + "%";
     $("noteLength").value = String(noteDuration);
+    refreshSelectedNote();
     if (audioMaster) audioMaster.gain.setTargetAtTime(song.volume / 100 * .65, audioCtx.currentTime, .04);
   }
 
@@ -209,6 +214,9 @@
     $("editorTrack").textContent = TRACKS[selected].name;
     $("editorTrack").style.color = COLORS[selected];
     $("instrumentSelect").value = song.tracks[selected].instrument || TRACKS[selected].type;
+    $("trackVolume").value = song.tracks[selected].volume ?? 100;
+    $("trackVolumeLabel").textContent = (song.tracks[selected].volume ?? 100) + "%";
+    refreshSelectedNote();
   }
 
   function renderPiano() {
@@ -239,6 +247,7 @@
       const p = TOP_NOTE - row;
       const y = row * CELL_HEIGHT;
       cx.fillStyle = isBlack(p) ? "#1d172c" : (p % 12 === 0 ? "#21192f" : "#161224");
+      if (!inScale(p) && $("scaleMode").value !== "chromatic") cx.fillStyle = "#1a101e";
       cx.fillRect(0, y, canvas.width, CELL_HEIGHT);
       cx.fillStyle = "#2d263a";
       cx.fillRect(0, y + CELL_HEIGHT - 1, canvas.width, 1);
@@ -249,14 +258,17 @@
     }
     const entries = song.tracks[selected].notes;
     const color = COLORS[selected];
-    entries.forEach((n) => {
+    entries.forEach((n, index) => {
       const x = n.s * CELL_WIDTH + 2;
       const y = (TOP_NOTE - n.p) * CELL_HEIGHT + 2;
       const w = Math.min(n.d, STEP_COUNT - n.s) * CELL_WIDTH - 4;
       cx.fillStyle = "#00000055";
       cx.fillRect(x + 2, y + 3, w, CELL_HEIGHT - 4);
       cx.fillStyle = color;
+      cx.globalAlpha = .25 + .75 * (n.v ?? .85);
       cx.fillRect(x, y, w, CELL_HEIGHT - 5);
+      cx.globalAlpha = 1;
+      if (selectedNote === index) { cx.strokeStyle = "#edffff"; cx.lineWidth = 2; cx.strokeRect(x, y, w, CELL_HEIGHT - 5); }
       cx.fillStyle = "#ffffff66";
       cx.fillRect(x + 2, y + 2, Math.max(2, w - 4), 2);
       cx.fillStyle = "#00000028";
@@ -342,7 +354,7 @@
         if (action === "mute") song.tracks[i].muted = !song.tracks[i].muted;
         else song.tracks[i].solo = !song.tracks[i].solo;
         persist();
-      } else selected = i;
+      } else { selected = i; selectedNote = -1; }
       renderTracks();
       drawRoll();
     });
@@ -540,7 +552,7 @@
     song.tracks.forEach((track, i) => {
       if (!audible(i)) return;
       track.notes.forEach((n) => {
-        if (n.s === step) tone(audioCtx, audioMaster, track.instrument || TRACKS[i].type, n.p, time, n.d * stepSeconds() * .92, TRACKS[i].gain);
+        if (n.s === step) tone(audioCtx, audioMaster, track.instrument || TRACKS[i].type, n.p, time, n.d * stepSeconds() * .92, TRACKS[i].gain * (track.volume ?? 100)/100 * (n.v ?? .85));
       });
     });
     scheduled.push({ step: step, time: time });
@@ -672,7 +684,7 @@
         if (!audible(i)) return;
         track.notes.forEach((n) => {
           const shift = n.s % 2 ? song.swing / 100 * stepSeconds() : 0;
-          tone(offline, master, track.instrument || TRACKS[i].type, n.p, n.s * stepSeconds() + .01 + shift, n.d * stepSeconds() * .92, TRACKS[i].gain);
+          tone(offline, master, track.instrument || TRACKS[i].type, n.p, n.s * stepSeconds() + .01 + shift, n.d * stepSeconds() * .92, TRACKS[i].gain * (track.volume ?? 100)/100 * (n.v ?? .85));
         });
       });
       const buffer = await offline.startRendering();
@@ -754,6 +766,8 @@
 
   function makePreset(kind) {
     const project = fresh();
+    const addNotes=(track,pitches,steps,duration)=>steps.forEach((step,i)=>project.tracks[track].notes.push({s:step,p:pitches[i%pitches.length],d:duration,v:.85}));
+    const chord=(track,step,pitches,duration)=>pitches.forEach(p=>project.tracks[track].notes.push({s:step,p,d:duration,v:.85}));
     if (kind === "empty") { project.title = "Minha Nova Trilha"; return clone(project); }
     if (kind === "battle") {
       project.title = "Coração Valente"; project.bpm = 166;
@@ -991,6 +1005,11 @@
 
   window.DarkwaveStudio = {
     settings() { return {bpm: song.bpm, bars: song.bars, title: song.title}; },
+    getProject(){return clone(song);},
+    getSelectedTrack(){return selected;},
+    applyProject(project,message="Projeto atualizado."){replaceSong(project,message);},
+    saveFile(blob,filename){download(blob,filename);},
+    notify(message){toast(message);},
     importedAudio() { return uploadedAudio ? {buffer:uploadedAudio,name:uploadedName,file:uploadedFile} : null; },
     retroAudioBlob() { return retroAudio(); },
     instruments() { return INSTRUMENTS.map(x=>({...x})); },
