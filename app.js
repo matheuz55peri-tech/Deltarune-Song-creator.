@@ -77,6 +77,7 @@
   let toastTimer = null;
   let uploadedAudio = null;
   let uploadedName = "";
+  let uploadedFile = null;
   let previewUrl = null;
   let previewAudio = null;
   let drawing = false;
@@ -794,10 +795,11 @@
       const data = await file.arrayBuffer();
       uploadedAudio = await ctx.decodeAudioData(data);
       uploadedName = file.name;
+      uploadedFile = file;
       $("fileInfo").textContent = "♫ " + file.name + " · " + uploadedAudio.duration.toFixed(1) + " s · " + uploadedAudio.sampleRate + " Hz";
       toast("Áudio carregado! Ajuste os efeitos.");
     } catch (err) {
-      uploadedAudio = null; toast("Não foi possível ler este formato de áudio.");
+      uploadedAudio = null; uploadedFile = null; toast("Não foi possível ler este formato de áudio.");
       $("fileInfo").hidden = true;
     }
   }
@@ -989,7 +991,9 @@
 
   window.DarkwaveStudio = {
     settings() { return {bpm: song.bpm, bars: song.bars, title: song.title}; },
-    importedAudio() { return uploadedAudio ? {buffer:uploadedAudio,name:uploadedName} : null; },
+    importedAudio() { return uploadedAudio ? {buffer:uploadedAudio,name:uploadedName,file:uploadedFile} : null; },
+    retroAudioBlob() { return retroAudio(); },
+    instruments() { return INSTRUMENTS.map(x=>({...x})); },
     preview(track = 0, pitch = 64) { audition(clamp(Number(track),0,7), clamp(Number(pitch),45,72), .5); },
     setArrangement(arrangement, mode = "replace") {
       if (!arrangement || !Array.isArray(arrangement.tracks)) throw new Error("A análise não retornou faixas.");
