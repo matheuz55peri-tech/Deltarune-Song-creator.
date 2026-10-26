@@ -1010,6 +1010,58 @@
       syncForm(); drawRoll(); renderTracks(); persist();
     });
     $("undoBtn").addEventListener("click", undo);
+    $("redoBtn").addEventListener("click",redo);
+    $("trackVolume").addEventListener("input",(e)=>{
+      song.tracks[selected].volume=clamp(Number(e.target.value),0,150);
+      $("trackVolumeLabel").textContent=song.tracks[selected].volume+"%";
+      persist();
+    });
+    document.querySelectorAll("[data-editor-tool]").forEach(b=>b.addEventListener("click",()=>{
+      editorTool=b.dataset.editorTool;activeDrag=null;
+      document.querySelectorAll("[data-editor-tool]").forEach(x=>x.classList.toggle("active",x===b));
+    }));
+    ["scaleRoot","scaleMode"].forEach(id=>$(id).addEventListener("change",drawRoll));
+    $("scaleLock").addEventListener("change",drawRoll);
+    $("noteVelocity").addEventListener("input",e=>{
+      const n=song.tracks[selected].notes[selectedNote];if(!n)return;
+      n.v=clamp(Number(e.target.value)/100,.1,1);
+      $("noteVelocityLabel").textContent=Math.round(n.v*100)+"%";persist();drawRoll();
+    });
+    function transposeSelected(delta) {
+      const n=song.tracks[selected].notes[selectedNote];if(!n){toast("Selecione uma nota com MOVER.");return;}
+      remember();n.p=clamp(n.p+delta,45,72);commitChange();
+    }
+    $("transposeDownBtn").addEventListener("click",()=>transposeSelected(-12));
+    $("transposeUpBtn").addEventListener("click",()=>transposeSelected(12));
+    $("copyNoteBtn").addEventListener("click",()=>{
+      const n=song.tracks[selected].notes[selectedNote];
+      if(!n){toast("Selecione uma nota com MOVER.");return;}
+      noteClipboard={...n};toast("Nota copiada.");
+    });
+    $("pasteNoteBtn").addEventListener("click",()=>{
+      if(!noteClipboard){toast("Copie uma nota primeiro.");return;}
+      remember();
+      const n={...noteClipboard,s:clamp(noteClipboard.s+noteClipboard.d,0,STEP_COUNT-1)};
+      n.d=Math.min(n.d,STEP_COUNT-n.s);
+      song.tracks[selected].notes.push(n);
+      selectedNote=song.tracks[selected].notes.length-1;commitChange();
+    });
+    $("quantizeTrackBtn").addEventListener("click",()=>{
+      const t=song.tracks[selected];if(!t.notes.length)return;
+      remember();t.notes.forEach(n=>{n.s=snapGrid(n.s);n.d=Math.min(n.d,STEP_COUNT-n.s);});
+      commitChange();toast("Notas alinhadas à grade.");
+    });
+    $("duplicateBarBtn").addEventListener("click",()=>{
+      const notes=song.tracks[selected].notes;
+      const source=Math.floor((notes[selectedNote]?.s??heardStep)/16)*16;
+      const destination=source+16;
+      if(destination>=STEP_COUNT){toast("Aumente o número de compassos para duplicar.");return;}
+      const copy=notes.filter(n=>n.s>=source && n.s<source+16)
+        .map(n=>({...n,s:n.s+16,d:Math.min(n.d,STEP_COUNT-n.s-16)}));
+      if(!copy.length){toast("Este compasso está vazio.");return;}
+      remember();notes.push(...copy);commitChange();toast("Compasso duplicado.");
+    });
+
     $("clearTrackBtn").addEventListener("click", () => {
       if (!song.tracks[selected].notes.length) return;
       if (!confirm("Apagar todas as notas desta faixa?")) return;
@@ -1058,16 +1110,26 @@
       const editable = e.target.closest("input,select,textarea,button");
       if (e.code === "Space" && !editable) { e.preventDefault(); togglePlay(); }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); saveLibrary(); }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !editable) { e.preventDefault(); undo(); }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !editable) { e.preventDefault();e.shiftKey?redo():undo(); }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y" && !editable) {e.preventDefault();redo();}
+      if ((e.key==="Delete" || e.key==="Backspace") && !editable && selectedNote>=0){
+        e.preventDefault();remember();song.tracks[selected].notes.splice(selectedNote,1);selectedNote=-1;commitChange();
+      }
       if (!editable && /^[1-8]$/.test(e.key) && !e.ctrlKey) {
         selected = Number(e.key) - 1; renderTracks(); drawRoll();
       }
     });
   }
 
+  function redo() {
+    if(!redoStack.length){toast("Não há alterações para refazer.");return;}
+    stop();undoStack.push(clone(song));song=redoStack.pop();selectedNote=-1;
+    syncForm();renderTracks();drawRoll();persist();toast("Alteração refeita.");
+  }
+
   function undo() {
     if (!undoStack.length) { toast("Não há alterações para desfazer."); return; }
-    stop(); song = undoStack.pop(); syncForm(); renderTracks(); drawRoll(); persist(); toast("Alteração desfeita.");
+    stop();redoStack.push(clone(song));song=undoStack.pop();selectedNote=-1;syncForm();renderTracks();drawRoll();persist();toast("Alteração desfeita.");
   }
 
   function init() {
