@@ -311,3 +311,22 @@ footer {border-color:#1b5270}
  .composer-assistant,.midi-panel{padding:12px}
  .note-toolbar .micro-label{flex-basis:100%}
 }
+
+
+/* V5.1: transport looping, creative guide and keyboard clarity */
+.transport-actions{flex-wrap:wrap;align-items:center;justify-content:flex-end}
+.transport-actions #metroBtn.active,.transport-actions #loopBtn.active{background:#17677a;border-color:#3af0e4;color:#ecffff}
+.loop-range{display:flex;align-items:center;gap:5px;white-space:nowrap;color:#9dbcc8;font-size:9px;font-weight:800;letter-spacing:.4px}
+.loop-range select{border:1px solid #376477;border-radius:5px;background:#12293a;color:#e7feff;padding:6px;font-size:10px}
+.ruler{cursor:pointer}
+.ruler span:hover{color:#e4ffff;background:#295a6a}
+.creative-guide{margin-top:14px;padding:24px}
+.creative-guide h3{font-size:18px;margin:5px 0 20px}
+.guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.guide-grid>div{background:#0d2639;border:1px solid #29546b;border-radius:8px;padding:16px}
+.guide-grid strong{color:#b3fcff;font-size:12px}
+.guide-grid p{color:#a5c3d3;font-size:11px;line-height:1.8}
+.guide-sources{font-size:11px;color:#9fbacc;margin-top:19px}
+.guide-sources a{color:#8beaff;text-underline-offset:3px}
+@media(max-width:900px){.transport-actions{justify-content:flex-start;margin-left:0}.transport{align-items:flex-start}}
+@media(max-width:600px){.guide-grid{grid-template-columns:1fr}.creative-guide{padding:13px}.loop-range{flex-basis:100%}.transport-actions #metroBtn,.transport-actions #loopBtn{flex:1}}
