@@ -307,8 +307,11 @@
     }
     // Percussive onsets use changes in the actual spectral content, not fabricated beats.
     const usedKick=new Set(),usedHat=new Set();
-    const onsetStrength=percentile(onsets.peaks.map(p=>p.strength),.3);
-    for(const hit of onsets.peaks){
+    const strengths=onsets.peaks.map(p=>p.strength);
+    // Eliminate tiny "onsets" due to FFT phase leakage in stable sustained notes.
+    const onsetStrength=Math.max(percentile(strengths,.8)*.085,percentile(strengths,.35)*2.1);
+    const reliableOnsets=onsets.peaks.filter(p=>p.strength>=onsetStrength);
+    for(const hit of reliableOnsets.length>=3?reliableOnsets:[]){
       const step=Math.round((hit.time-phase)/timePerStep);
       if(step<0||step>=activeSteps||hit.strength<onsetStrength)continue;
       if(hit.low>hit.high*.72 && hit.low>.02) {
