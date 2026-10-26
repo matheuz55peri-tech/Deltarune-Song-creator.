@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <script defer src="app.js"></script>
-  <script defer src="audio-lab.js"></script>
+  <link rel="stylesheet" href="style.css?v=2">
+  <script defer src="app.js?v=2"></script>
+  <script defer src="audio-lab.js?v=2"></script>
 </head>
 <body>
   <div class="stars" aria-hidden="true"></div>
@@ -59,7 +59,7 @@
             <div class="sidebar-tip"><span>✦</span><p>Escolha uma faixa e desenhe notas na grade ao lado. Cada cor é um instrumento.</p></div>
           </aside>
           <div class="editor panel">
-            <div class="editor-header"><div><span class="micro-label">PIANO ROLL / EDITOR DE NOTAS</span><h3 id="editorTrack">Lead dos Sonhos</h3></div><div class="editor-settings"><label for="noteLength">DURAÇÃO</label><select id="noteLength"><option value="1">1/16</option><option value="2" selected>1/8</option><option value="4">1/4</option><option value="8">1/2</option></select><button id="previewInstrumentBtn" class="instrument-preview" title="Escutar o instrumento atual antes de inserir notas">▶ OUVIR SOM</button><button id="clearTrackBtn">LIMPAR FAIXA</button></div></div>
+            <div class="editor-header"><div><span class="micro-label">PIANO ROLL / EDITOR DE NOTAS</span><h3 id="editorTrack">Lead dos Sonhos</h3></div><div class="editor-settings"><label for="noteLength">DURAÇÃO</label><select id="noteLength"><option value="1">1/16</option><option value="2" selected>1/8</option><option value="4">1/4</option><option value="8">1/2</option></select><button id="previewInstrumentBtn" class="instrument-preview" title="Escutar o instrumento atual antes de inserir notas">▶ OUVIR SOM</button><label class="hover-preview-label" title="Ouvir a altura da nota ao passar o mouse, sem colocar notas"><input id="hoverPreview" type="checkbox"> PRÉVIA AO PASSAR</label><button id="clearTrackBtn">LIMPAR FAIXA</button></div></div>
             <div class="piano-shell">
               <div class="piano-sidebar"><div class="piano-corner">NOTA</div><div id="pianoKeys" class="piano-keys"></div></div>
               <div id="rollScroll" class="roll-scroll"><div class="roll-inner"><div id="ruler" class="ruler"></div><canvas id="roll" width="1536" height="600" aria-label="Editor de notas; clique e arraste para escrever notas" tabindex="0"></canvas></div></div>
