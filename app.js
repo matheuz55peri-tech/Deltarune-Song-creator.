@@ -57,7 +57,7 @@
   const noteLabel = (midi) => notesName[midi % 12] + (Math.floor(midi / 12) - 1);
   const isBlack = (midi) => [1, 3, 6, 8, 10].includes(midi % 12);
   const fresh = () => ({
-    version: 2, title: "Minha Nova Trilha", bpm: 132, bars: 4, swing: 0, volume: 74,
+    version: 3, title: "Minha Nova Trilha", bpm: 132, bars: 4, swing: 0, volume: 74, scaleRoot:0, scaleMode:"major", scaleLock:false,
     tracks: TRACKS.map((track) => ({ notes: [], muted: false, solo: false, volume:100, instrument:track.type }))
   });
   let song = fresh();
@@ -110,7 +110,10 @@
     parsed.bars = [4, 8, 16, 32].includes(Number(data.bars)) ? Number(data.bars) : 4;
     const projectSteps = parsed.bars * 16;
     parsed.swing = clamp(Number(data.swing) || 0, 0, 45);
-    parsed.volume = clamp(Number(data.volume) || 74, 0, 100);
+    parsed.volume = clamp(Number(data.volume ?? 74), 0, 100);
+    parsed.scaleRoot=clamp(Math.round(Number(data.scaleRoot)||0),0,11);
+    parsed.scaleMode=["major","minor","pentatonic","chromatic"].includes(data.scaleMode)?data.scaleMode:"major";
+    parsed.scaleLock=!!data.scaleLock;
     parsed.tracks = data.tracks.map((track) => {
       const rawNotes = Array.isArray(track.notes) ? track.notes.slice(0, 2048) : [];
       return {
@@ -180,6 +183,9 @@
     $("masterVolume").value = song.volume;
     $("volumeVal").textContent = song.volume + "%";
     $("noteLength").value = String(noteDuration);
+    $("scaleRoot").value=String(song.scaleRoot??0);
+    $("scaleMode").value=song.scaleMode||"major";
+    $("scaleLock").checked=!!song.scaleLock;
     refreshSelectedNote();
     if (audioMaster) audioMaster.gain.setTargetAtTime(song.volume / 100 * .65, audioCtx.currentTime, .04);
   }
@@ -1057,6 +1063,7 @@
     });
     $("undoBtn").addEventListener("click", undo);
     $("redoBtn").addEventListener("click",redo);
+    $("trackVolume").addEventListener("pointerdown",()=>remember());
     $("trackVolume").addEventListener("input",(e)=>{
       song.tracks[selected].volume=clamp(Number(e.target.value),0,150);
       $("trackVolumeLabel").textContent=song.tracks[selected].volume+"%";
@@ -1066,8 +1073,14 @@
       editorTool=b.dataset.editorTool;activeDrag=null;
       document.querySelectorAll("[data-editor-tool]").forEach(x=>x.classList.toggle("active",x===b));
     }));
-    ["scaleRoot","scaleMode"].forEach(id=>$(id).addEventListener("change",drawRoll));
-    $("scaleLock").addEventListener("change",drawRoll);
+    ["scaleRoot","scaleMode"].forEach(id=>$(id).addEventListener("change",()=>{
+      song.scaleRoot=Number($("scaleRoot").value);
+      song.scaleMode=$("scaleMode").value;persist();drawRoll();
+    }));
+    $("scaleLock").addEventListener("change",()=>{
+      song.scaleLock=$("scaleLock").checked;persist();drawRoll();
+    });
+    $("noteVelocity").addEventListener("pointerdown",()=>{if(selectedNote>=0)remember();});
     $("noteVelocity").addEventListener("input",e=>{
       const n=song.tracks[selected].notes[selectedNote];if(!n)return;
       n.v=clamp(Number(e.target.value)/100,.1,1);
