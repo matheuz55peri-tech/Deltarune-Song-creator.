@@ -3,7 +3,7 @@
 (function () {
   const STORAGE = "darkwave-studio-draft-v1";
   const LIBRARY = "darkwave-studio-projects-v1";
-  const STEP_COUNT = 64;
+  let STEP_COUNT = 64;
   const CELL_WIDTH = 24;
   const CELL_HEIGHT = 19;
   const TOP_NOTE = 72;
@@ -27,7 +27,7 @@
   const noteLabel = (midi) => notesName[midi % 12] + (Math.floor(midi / 12) - 1);
   const isBlack = (midi) => [1, 3, 6, 8, 10].includes(midi % 12);
   const fresh = () => ({
-    version: 1, title: "Minha Nova Trilha", bpm: 132, swing: 0, volume: 74,
+    version: 2, title: "Minha Nova Trilha", bpm: 132, bars: 4, swing: 0, volume: 74,
     tracks: TRACKS.map(() => ({ notes: [], muted: false, solo: false }))
   });
   let song = fresh();
@@ -72,6 +72,8 @@
     const parsed = fresh();
     parsed.title = String(data.title || "Música importada").slice(0, 55);
     parsed.bpm = clamp(Number(data.bpm) || 132, 50, 240);
+    parsed.bars = [4, 8, 16, 32].includes(Number(data.bars)) ? Number(data.bars) : 4;
+    const projectSteps = parsed.bars * 16;
     parsed.swing = clamp(Number(data.swing) || 0, 0, 45);
     parsed.volume = clamp(Number(data.volume) || 74, 0, 100);
     parsed.tracks = data.tracks.map((track) => {
@@ -80,7 +82,7 @@
         muted: !!track.muted,
         solo: !!track.solo,
         notes: rawNotes.filter((n) => Number.isFinite(n.s) && Number.isFinite(n.p) && Number.isFinite(n.d))
-          .map((n) => ({ s: clamp(Math.round(n.s), 0, 63), p: clamp(Math.round(n.p), 45, 72), d: clamp(Math.round(n.d), 1, 16), v: .85 }))
+          .map((n) => ({ s: clamp(Math.round(n.s), 0, projectSteps - 1), p: clamp(Math.round(n.p), 45, 72), d: clamp(Math.round(n.d), 1, 32), v: .85 }))
       };
     });
     return parsed;
@@ -114,6 +116,13 @@
   }
 
   function syncForm() {
+    STEP_COUNT = (song.bars || 4) * 16;
+    canvas.width = STEP_COUNT * CELL_WIDTH;
+    canvas.style.width = canvas.width + "px";
+    document.querySelector(".roll-inner").style.width = canvas.width + "px";
+    $("measures").value = String(song.bars || 4);
+    $("barSummary").textContent = STEP_COUNT / 16 + " COMPASSOS • 4/4";
+    renderPiano();
     $("songName").value = song.title;
     $("bpm").value = song.bpm;
     $("swing").value = song.swing;
@@ -149,13 +158,19 @@
       mute.title = "Silenciar";
       mute.setAttribute("data-action", "mute");
       mute.setAttribute("aria-label", "Silenciar faixa " + config.name);
+      const preview = document.createElement("button");
+      preview.className = "track-tool preview-track";
+      preview.textContent = "▶";
+      preview.title = "Ouvir o instrumento antes de colocar notas";
+      preview.setAttribute("data-action", "preview");
+      preview.setAttribute("aria-label", "Ouvir instrumento " + config.name);
       const solo = document.createElement("button");
       solo.className = "track-tool" + (song.tracks[i].solo ? " on" : "");
       solo.textContent = "S";
       solo.title = "Ouvir somente esta faixa";
       solo.setAttribute("data-action", "solo");
       solo.setAttribute("aria-label", "Solo da faixa " + config.name);
-      node.append(badge, meta, mute, solo);
+      node.append(badge, meta, preview, mute, solo);
       list.appendChild(node);
     });
     $("editorTrack").textContent = TRACKS[selected].name;
@@ -274,6 +289,10 @@
       if (!track) return;
       const i = Number(track.dataset.track);
       const action = e.target.getAttribute("data-action");
+      if (action === "preview") {
+        previewTrack(i);
+        return;
+      }
       if (action) {
         remember();
         if (action === "mute") song.tracks[i].muted = !song.tracks[i].muted;
@@ -370,6 +389,12 @@
   function audible(i) {
     const hasSolo = song.tracks.some((t) => t.solo);
     return !song.tracks[i].muted && (!hasSolo || song.tracks[i].solo);
+  }
+
+  function previewTrack(track) {
+    const samplePitch = track === 3 ? 57 : track === 6 ? 48 : track === 7 ? 60 : 64;
+    audition(track, samplePitch, track >= 6 ? .12 : .55);
+    if (track < 6) setTimeout(() => audition(track, samplePitch + (track === 3 ? 0 : 3), .38), 170);
   }
 
   function audition(track, pitch, length) {
@@ -748,6 +773,15 @@
     $("masterVolume").addEventListener("input", (e) => { song.volume = Number(e.target.value); $("volumeVal").textContent = song.volume + "%"; if (audioMaster) audioMaster.gain.setTargetAtTime(song.volume / 100 * .65, audioCtx.currentTime, .03); persist(); });
     $("songName").addEventListener("input", (e) => { song.title = e.target.value; persist(); });
     $("noteLength").addEventListener("change", (e) => { noteDuration = Number(e.target.value); });
+    $("previewInstrumentBtn").addEventListener("click", () => previewTrack(selected));
+    $("measures").addEventListener("change", (e) => {
+      if(playing) stop();
+      const bars = Number(e.target.value);
+      if(bars < song.bars && song.tracks.some(t => t.notes.some(n => n.s >= bars*16)) && !confirm("Notas além do novo limite serão apagadas. Continuar?")) { e.target.value = song.bars; return; }
+      remember(); song.bars = bars;
+      song.tracks.forEach(t => t.notes = t.notes.filter(n => n.s < bars*16).map(n => ({...n,d:Math.min(n.d,bars*16-n.s)})));
+      syncForm(); drawRoll(); renderTracks(); persist();
+    });
     $("undoBtn").addEventListener("click", undo);
     $("clearTrackBtn").addEventListener("click", () => {
       if (!song.tracks[selected].notes.length) return;
@@ -818,5 +852,27 @@
     updatePosition();
   }
 
+  window.DarkwaveStudio = {
+    settings() { return {bpm: song.bpm, bars: song.bars, title: song.title}; },
+    preview(track = 0, pitch = 64) { audition(clamp(Number(track),0,7), clamp(Number(pitch),45,72), .5); },
+    setArrangement(arrangement, mode = "replace") {
+      if (!arrangement || !Array.isArray(arrangement.tracks)) throw new Error("A análise não retornou faixas.");
+      const destination = mode === "merge" ? clone(song) : fresh();
+      const bars = [4,8,16,32].find(n => n*16 >= (arrangement.totalSteps || 64)) || 32;
+      destination.bars = Math.max(destination.bars, bars);
+      if(mode === "replace") destination.title = String(arrangement.title || "Nova Trilha") .slice(0,55);
+      if(mode === "replace" && Number.isFinite(arrangement.bpm)) destination.bpm = clamp(Math.round(arrangement.bpm),50,240);
+      const bound = destination.bars * 16;
+      arrangement.tracks.forEach((notes,i) => {
+        if(i >= 8 || !Array.isArray(notes)) return;
+        const incoming = notes.slice(0,3000).filter(n => Number.isFinite(n.s) && Number.isFinite(n.p) && Number.isFinite(n.d))
+          .map(n => ({s:clamp(Math.round(n.s),0,bound-1),p:clamp(Math.round(n.p),45,72),d:clamp(Math.round(n.d),1,32),v:.85}));
+        destination.tracks[i].notes = mode === "merge" ? destination.tracks[i].notes.concat(incoming) : incoming;
+      });
+      replaceSong(destination, "Análise importada: confira e ajuste as notas.");
+      switchPage("studio");
+    },
+    switchPage: switchPage
+  };
   init();
 })();
