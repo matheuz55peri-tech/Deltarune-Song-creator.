@@ -283,6 +283,44 @@
     }
   }
 
+  function inScale(pitch) {
+    const intervals={major:[0,2,4,5,7,9,11],minor:[0,2,3,5,7,8,10],pentatonic:[0,2,4,7,9],chromatic:[0,1,2,3,4,5,6,7,8,9,10,11]};
+    const root=Number($("scaleRoot")?.value || 0);
+    const mode=$("scaleMode")?.value || "chromatic";
+    return (intervals[mode] || intervals.chromatic).includes((pitch-root+120)%12);
+  }
+  function nearestScale(pitch) {
+    pitch=clamp(pitch,45,72);
+    if(!$("scaleLock").checked)return pitch;
+    for(let i=0;i<=12;i++){
+      if(pitch+i<=72 && inScale(pitch+i))return pitch+i;
+      if(pitch-i>=45 && inScale(pitch-i))return pitch-i;
+    }
+    return pitch;
+  }
+  function snapGrid(step) {
+    const interval=Number($("gridSnap")?.value || 1);
+    return clamp(Math.round(step/interval)*interval,0,STEP_COUNT-1);
+  }
+  function refreshSelectedNote() {
+    const note=song.tracks[selected]?.notes?.[selectedNote];
+    const label=$("selectedNoteLabel"),slider=$("noteVelocity");
+    if(!label||!slider)return;
+    label.textContent=note ? noteLabel(note.p)+" · PASSO "+(note.s+1)+" · "+note.d+"/16" : "NENHUMA";
+    slider.disabled=!note;
+    slider.value=note?Math.round((note.v ?? .85)*100):85;
+    $("noteVelocityLabel").textContent=slider.value+"%";
+  }
+  function noteAt(cell) {
+    if(!cell)return -1;
+    const notes=song.tracks[selected].notes;
+    for(let i=notes.length-1;i>=0;i--){
+      const n=notes[i];
+      if(n.p===cell.p && cell.s>=n.s && cell.s<n.s+n.d)return i;
+    }
+    return -1;
+  }
+
   function gridCell(e) {
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width * canvas.width;
@@ -305,8 +343,12 @@
     }
     if (drawMode === "erase" && existing !== -1) notes.splice(existing, 1);
     else if (drawMode === "add" && existing === -1) {
-      notes.push({ s: cell.s, p: cell.p, d: Math.min(noteDuration, STEP_COUNT - cell.s), v: .85 });
-      audition(selected, cell.p, .19);
+      const step=snapGrid(cell.s),pitch=nearestScale(cell.p);
+      if(!notes.some(n=>n.s===step && n.p===pitch)){
+        notes.push({s:step,p:pitch,d:Math.min(noteDuration,STEP_COUNT-step),v:.85});
+        selectedNote=notes.length-1;
+        audition(selected,pitch,.19);
+      }
     }
     commitChange();
   }
