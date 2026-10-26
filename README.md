@@ -6,6 +6,24 @@ Um **estúdio musical online gratuito para criar trilhas originais de RPG**, com
 
 ## ✨ O que está pronto
 
+### Conversor V3 e nova biblioteca de timbres (outubro de 2026)
+
+- **Correção principal:** a importação "Desmontar e colocar no estúdio" usa agora o `analysis-v3.js`, que analisa mudanças de nota ao longo do tempo e sinais de início de cada som (onsets). Isso substitui o método anterior, que podia inventar acordes e notas extras.
+- **Escolha a modalidade certa:** o botão **▶ RETRÔ FIEL** reproduz a gravação original com bit depth / taxa efetiva reduzidos, mantendo as notas e a interpretação do áudio. O botão **▶ ORIGINAL** ajuda a comparar. Para baixar esta versão, use **CONVERTER E BAIXAR WAV**.
+- **Notas editáveis são uma aproximação:** o botão **DESMONTAR E COLOCAR NO ESTÚDIO** gera notas quantizadas para oito faixas, escolhendo sugestões de instrumentos retro/chiptune. **Não** é uma separação neural de fontes, nem recupera stems individuais. Em músicas com muitos instrumentos, vocais misturados ou efeitos, a reconstrução pode diferir bastante da gravação.
+- **26 opções de timbres selecionáveis por faixa:** pulse 8-bit, triângulo NES, arpejo, piano elétrico, órgão, celesta, sinos, marimba, carrilhão, harpa, baixos, cordas, coro, metais, flauta, bateria e outros. Escolha a faixa, mude **TIMBRE** no editor e aperte **OUVIR SOM**.
+- **Proteção de projetos:** os timbres salvos anteriormente continuam compatíveis; o novo campo `instrument` é opcional em arquivos JSON antigos.
+- **Comparação realista:** use **DETALHAMENTO**, **ANDAMENTO** e experimente trocar os instrumentos das faixas até chegar à estética desejada. O processamento musical do arranjador considera os primeiros 75 segundos do áudio importado; a grade tem limite de 32 compassos.
+
+#### Diferença entre os dois resultados
+
+| Ferramenta | Preserva a música original? | Permite editar notas individuais? |
+|---|---|---|
+| **Retrofiel** (bitcrush) | Sim, preserva a interpretação e a estrutura, alterando o timbre | Não |
+| **Desmontar no estúdio** (análise espectral) | Parcialmente; extração aproximada | Sim |
+
+Para separação mais precisa de vozes e instrumentos reais, seria necessário integrar um modelo neural de *source separation*. Isso **ainda não está integrado** a este site estático.
+
 ### Atualização: estúdio, voz e arranjador automático
 
 - **Prévia de instrumento:** clique em **▶** em cada faixa ou em **▶ OUVIR SOM** no editor para ouvir o timbre antes de adicionar notas. Também existe **PRÉVIA AO PASSAR**, que toca a nota sob o mouse sem escrevê-la.
