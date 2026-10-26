@@ -246,7 +246,7 @@
     if(data.length<4000)throw new Error("Grave pelo menos meio segundo de áudio.");
     const {onsets}=audioOnsets(data);
     const studio=window.DarkwaveStudio.settings();
-    const bpm=studio.bpm;
+    const bpm=config.tempo==="auto" ? estimateBpm(onsets,studio.bpm) : studio.bpm;
     const stepSec=60/bpm/4;
     const maxSteps=512;
     const quantize=Number(config.quantize)||2;
@@ -279,8 +279,20 @@
       const notes=noteFromFrames(sequence,frameSec,stepSec,64,quantize,maxSteps);
       if(!notes.length)throw new Error("Notas muito curtas ou pouco claras. Tente cantarolar de forma mais contínua.");
       const avg=median(notes.map(n=>n.p))||60;
-      let target=config.mode==="bass"|| (config.mode==="auto" && avg<53) ? 3 : 0;
-      if(target===0 && config.mode==="auto" && confidenceSum/Math.max(1,voiced)>.93 && onsets.length>notes.length*1.6)target=5;
+      const articulation=onsets.length/Math.max(1,notes.length);
+      // Basic timbre descriptors: brightness/zero-crossings and articulation.
+      let changes=0, samplesCount=0;
+      for(let k=0;k<data.length-2;k+=9){
+        changes += (data[k]>=0)!==(data[k+2]>=0)?1:0;
+        samplesCount++;
+      }
+      const brightness=changes/Math.max(1,samplesCount);
+      let target=config.mode==="bass" || (config.mode==="auto" && avg<53) ? 3 : 0;
+      if(config.mode==="auto" && target===0){
+        if(articulation>2.0 && brightness>.10)target=5; // pluck
+        else if(avg>=68 && brightness>.085)target=2; // bells
+        else if(brightness<.047 && articulation<1.1)target=1; // soft keys
+      }
       tracks[target]=compressNotes(notes,maxSteps);
     }
     report(1,"Análise concluída!");
@@ -521,6 +533,7 @@
       },250);
       recordStopTimer=setTimeout(stopRecording,45000);
     }catch(err){
+      if(recorder && recorder.state==="recording")recorder.stop();
       stopMediaTracks();
       status(err.name==="NotAllowedError"?"Permissão negada: libere o microfone nas configurações do navegador.":"Não foi possível iniciar o microfone: "+err.message);
       $("micStartBtn").disabled=false;$("micStopBtn").disabled=true;
@@ -546,7 +559,7 @@
     if(!recordedBuffer||busy)return;
     busy=true;$("voiceCreateBtn").disabled=true;
     try{
-      const config={mode:$("voiceMode").value,quantize:$("voiceQuantize").value};
+      const config={mode:$("voiceMode").value,quantize:$("voiceQuantize").value,tempo:$("voiceTempo").value};
       const data=await transcribeVoice(recordedBuffer,config,(v,t)=>setProgress("voice",v,t));
       window.DarkwaveStudio.setArrangement(data,$("voiceImportMode").value);
       status("✓ Melodia analisada! Confira as notas no estúdio.");
@@ -557,18 +570,23 @@
   async function importMusic() {
     if(busy)return;
     const file=$("audioFile").files[0];
-    if(!file) { notify("Selecione primeiro uma música na área de importação.");$("selectAudioBtn").focus();return; }
-    if(file.size>45*1024*1024){notify("Arquivo muito grande. Use até 45 MB.");return;}
+    const shared=window.DarkwaveStudio.importedAudio();
+    if(!file && !shared) { notify("Selecione primeiro uma música na área de importação.");$("selectAudioBtn").focus();return; }
+    if(file && file.size>45*1024*1024){notify("Arquivo muito grande. Use até 45 MB.");return;}
     busy=true;$("importArrangementBtn").disabled=true;
     try{
-      if(file!==musicFile||!musicBuffer) {
+      let sourceName=file?file.name:shared.name;
+      if(shared && (!file || shared.name===file.name)) {
+        musicBuffer=shared.buffer;
+        musicFile=file||shared.name;
+      } else if(file!==musicFile||!musicBuffer) {
         setProgress("import",.01,"Lendo arquivo de áudio...");
         const Ctx=window.AudioContext||window.webkitAudioContext;
         const ctx=new Ctx();
         try{musicBuffer=await ctx.decodeAudioData(await file.arrayBuffer());musicFile=file;}
         finally{await ctx.close();}
       }
-      const data=await arrangeImportedSong(musicBuffer,{complexity:$("importComplexity").value,title:file.name.replace(/\.[^.]+$/,"")},(v,t)=>setProgress("import",v,t));
+      const data=await arrangeImportedSong(musicBuffer,{complexity:$("importComplexity").value,title:sourceName.replace(/\.[^.]+$/,"")},(v,t)=>setProgress("import",v,t));
       window.DarkwaveStudio.setArrangement(data,$("importMode").value);
       notify("Arranjo aproximado importado. Revise o resultado em cada faixa.");
     }catch(err){notify("Erro na análise: "+err.message);}
