@@ -15,6 +15,7 @@
   let voicePreview = null, previewUrl = null, musicFile = null;
   let musicBuffer = null, busy = false, waveClock = 0;
   let operationActive = true;
+  let comparisonPlayer = null, comparisonUrl = null;
 
   function notify(message) {
     const toast = $("toast");
@@ -586,11 +587,40 @@
         try{musicBuffer=await ctx.decodeAudioData(await file.arrayBuffer());musicFile=file;}
         finally{await ctx.close();}
       }
-      const data=await arrangeImportedSong(musicBuffer,{complexity:$("importComplexity").value,title:sourceName.replace(/\.[^.]+$/,"")},(v,t)=>setProgress("import",v,t));
+      const analyze = window.DarkwaveAnalyzerV3 && window.DarkwaveAnalyzerV3.arrange;
+      if (!analyze) throw new Error("Analisador não carregou. Atualize a página.");
+      const data=await analyze(musicBuffer,{
+        complexity:$("importComplexity").value,
+        title:sourceName.replace(/\.[^.]+$/,""),
+        tempo:$("importTempo").value
+      },(v,t)=>setProgress("import",v,t));
       window.DarkwaveStudio.setArrangement(data,$("importMode").value);
-      notify("Arranjo aproximado importado. Revise o resultado em cada faixa.");
+      $("conversionFeedback").textContent="✓ "+data.analysis.notes+" notas sugeridas · "+data.bpm+" BPM estimados · instrumentos retrô selecionados. Compare com a gravação: a reconstrução em MIDI é aproximada, mas a conversão de áudio fiel preserva a interpretação original.";
+      notify("Arranjo criado. Ouça o original e troque os timbres se necessário.");
     }catch(err){notify("Erro na análise: "+err.message);}
     finally{busy=false;$("importArrangementBtn").disabled=false;setTimeout(()=>hideProgress("import"),2200);}
+  }
+
+
+  function stopComparison(){
+    if(comparisonPlayer){comparisonPlayer.pause();comparisonPlayer.currentTime=0;comparisonPlayer=null;}
+    if(comparisonUrl){URL.revokeObjectURL(comparisonUrl);comparisonUrl=null;}
+  }
+  async function playComparison(kind) {
+    try {
+      const audio=window.DarkwaveStudio.importedAudio();
+      if(!audio||!audio.file)throw new Error("Importe uma música antes de comparar.");
+      stopComparison();
+      const blob=kind==="original"?audio.file:window.DarkwaveStudio.retroAudioBlob();
+      comparisonUrl=URL.createObjectURL(blob);
+      comparisonPlayer=new Audio(comparisonUrl);
+      const feedback=$("conversionFeedback");
+      feedback.textContent=kind==="original"?
+        "▶ Tocando a gravação original, sem alterações.":
+        "▶ Tocando a gravação com textura retrô. O áudio preserva a melodia e o ritmo originais.";
+      comparisonPlayer.addEventListener("ended",()=>{feedback.textContent="Reprodução concluída.";stopComparison();},{once:true});
+      await comparisonPlayer.play();
+    }catch(e){notify("Não foi possível reproduzir: "+e.message);}
   }
 
   function init(){
@@ -600,8 +630,11 @@
     $("micReplayBtn").addEventListener("click",replayRecording);
     $("voiceCreateBtn").addEventListener("click",importVoice);
     $("importArrangementBtn").addEventListener("click",importMusic);
-    $("audioFile").addEventListener("change",()=>{musicFile=null;musicBuffer=null;});
-    $("dropArea").addEventListener("drop",()=>{musicFile=null;musicBuffer=null;});
+    $("playReferenceBtn").addEventListener("click",()=>playComparison("original"));
+    $("playRetroBtn").addEventListener("click",()=>playComparison("retro"));
+    $("stopReferenceBtn").addEventListener("click",stopComparison);
+    $("audioFile").addEventListener("change",()=>{musicFile=null;musicBuffer=null;stopComparison();});
+    $("dropArea").addEventListener("drop",()=>{musicFile=null;musicBuffer=null;stopComparison();});
     drawVoiceWave();
     document.addEventListener("visibilitychange",()=>{
       if(document.hidden && recorder && recorder.state==="recording")status("Gravação em andamento. Mantenha esta página aberta.");
