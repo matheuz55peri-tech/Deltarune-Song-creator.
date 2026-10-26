@@ -865,6 +865,7 @@
 
   window.DarkwaveStudio = {
     settings() { return {bpm: song.bpm, bars: song.bars, title: song.title}; },
+    importedAudio() { return uploadedAudio ? {buffer:uploadedAudio,name:uploadedName} : null; },
     preview(track = 0, pitch = 64) { audition(clamp(Number(track),0,7), clamp(Number(pitch),45,72), .5); },
     setArrangement(arrangement, mode = "replace") {
       if (!arrangement || !Array.isArray(arrangement.tracks)) throw new Error("A análise não retornou faixas.");
