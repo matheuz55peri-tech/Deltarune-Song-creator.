@@ -71,7 +71,7 @@
     if (start < 0 || start + N + maxLag >= data.length) return null;
     const e = rmsAround(data, start, N);
     if (e < .009) return null;
-    const candidates = [];
+    const correlations = new Float32Array(maxLag + 1);
     let best = 0;
     for (let lag = minLag; lag <= maxLag; lag++) {
       let dot = 0, a2 = 0, b2 = 0;
@@ -80,23 +80,31 @@
         dot += a * b; a2 += a * a; b2 += b * b;
       }
       const score = dot / Math.sqrt(a2 * b2 + 1e-12);
-      if (score > best) best = score;
-      if (score > .66 && score > (candidates.length ? candidates[candidates.length-1].raw : 0)) {
-        candidates.push({lag,raw:score});
-      }
+      correlations[lag] = score;
+      best = Math.max(best, score);
     }
     if (best < .70) return null;
-    let chosen = null, quality = -Infinity;
-    for (const c of candidates) {
-      if (c.raw < Math.max(.68, best - .13)) continue;
-      const freq = SAMPLE_RATE / c.lag;
-      let midi = Math.round(69 + 12 * Math.log2(freq / 440));
-      if (midi < 38 || midi > 83) continue;
-      midi = midiToLane(midi);
-      // Candidate quality balances periodicity and plausible melodic motion.
-      const movement = previousPitch == null ? 0 : Math.abs(midi - previousPitch);
-      const score = c.raw - Math.max(0, movement - 4) * .025 - (movement >= 12 ? .08 : 0);
-      if (score > quality) { quality = score; chosen = {pitch:midi, confidence:c.raw, rms:e}; }
+    const peaks = [];
+    for (let lag = minLag + 1; lag < maxLag; lag++) {
+      if (correlations[lag] >= Math.max(.72, best - .035) &&
+          correlations[lag] >= correlations[lag - 1] && correlations[lag] > correlations[lag + 1]) {
+        const frequency = SAMPLE_RATE / lag;
+        const rawMidi = Math.round(69 + 12 * Math.log2(frequency / 440));
+        if (rawMidi >= 38 && rawMidi <= 83)
+          peaks.push({lag, pitch:midiToLane(rawMidi), confidence:correlations[lag], rms:e});
+      }
+    }
+    if(!peaks.length) return null;
+    // The first near-optimal autocorrelation peak is normally the fundamental.
+    // Compare with previous note without rewarding spurious octave doubling.
+    peaks.sort((a,b)=>a.lag-b.lag);
+    let chosen=peaks[0], quality=-Infinity;
+    for (const candidate of peaks) {
+      const movement=previousPitch==null?0:Math.abs(candidate.pitch-previousPitch);
+      const continuityPenalty=previousPitch==null?0:Math.max(0,movement-3)*.022;
+      const harmonicPenalty=(candidate.lag/peaks[0].lag-1)*.022;
+      const rank=candidate.confidence-continuityPenalty-harmonicPenalty;
+      if (rank>quality) {chosen=candidate;quality=rank;}
     }
     return chosen;
   }
