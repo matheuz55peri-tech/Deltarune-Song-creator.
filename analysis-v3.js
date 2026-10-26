@@ -73,13 +73,12 @@
   }
   // Temporal median approximates sustained/harmonic content.
   function harmonicBin(specs,frame,bin) {
-    const array=[];
-    for(let offset=-2;offset<=2;offset++){
-      const f=clamp(frame+offset,0,specs.length-1);
-      array.push(specs[f][bin]||0);
-    }
-    array.sort((a,b)=>a-b);
-    return array[2];
+    // Fast 3-frame median; avoids excessive heap allocations and retains
+    // short 8-bit note attacks better than a wider temporal median.
+    const a=specs[Math.max(0,frame-1)][bin]||0;
+    const b=specs[frame][bin]||0;
+    const c=specs[Math.min(specs.length-1,frame+1)][bin]||0;
+    return a>b?(b>c?b:a>c?c:a):(a>c?a:b>c?c:b);
   }
   function peak(specs,frame,frequency) {
     const middle=Math.round(frequency*FFT/SR);
