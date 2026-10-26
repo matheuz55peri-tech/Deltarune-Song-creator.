@@ -52,6 +52,7 @@
   let drawing = false;
   let drawMode = "add";
   let lastPainted = "";
+  let hoverNote = -1, lastHoverAt = 0;
   const canvas = $("roll");
   const cx = canvas.getContext("2d");
   canvas.width = STEP_COUNT * CELL_WIDTH;
@@ -275,7 +276,17 @@
       canvas.setPointerCapture(e.pointerId);
       paint(e, true);
     });
-    canvas.addEventListener("pointermove", (e) => { if (drawing) paint(e, false); });
+    canvas.addEventListener("pointermove", (e) => {
+      if (drawing) { paint(e, false); return; }
+      if (!$("hoverPreview").checked || e.pointerType !== "mouse") return;
+      const cell = gridCell(e), now = performance.now();
+      if (cell && cell.p !== hoverNote && now - lastHoverAt > 120) {
+        hoverNote = cell.p;
+        lastHoverAt = now;
+        audition(selected, cell.p, .13);
+      }
+    });
+    canvas.addEventListener("pointerleave", () => { hoverNote = -1; });
     ["pointerup", "pointercancel", "lostpointercapture"].forEach((eventName) => canvas.addEventListener(eventName, () => {
       drawing = false;
       lastPainted = "";
@@ -400,7 +411,7 @@
   function audition(track, pitch, length) {
     try {
       const ctx = getContext();
-      if (audible(track)) tone(ctx, audioMaster, TRACKS[track].type, pitch, ctx.currentTime + .007, length, TRACKS[track].gain * .8);
+      tone(ctx, audioMaster, TRACKS[track].type, pitch, ctx.currentTime + .007, length, TRACKS[track].gain * .8);
     } catch (err) { toast(err.message); }
   }
 
